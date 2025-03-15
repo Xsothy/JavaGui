@@ -6,11 +6,10 @@ import javax.swing.*;
 public class Dashboard extends javax.swing.JFrame {
     public Dashboard() {
         initComponents();
-        controllPanel(new frmExpenseView());
+        controlPanel(new frmExpenseView());
         applyButtonStyles(btnExpense);
         applyButtonStyles(btnStaff);
         applyButtonStyles(btnLogout);
-        applyButtonStyles(btnUser);
     }
      
      private void applyButtonStyles(JButton button) {
@@ -98,22 +97,6 @@ public class Dashboard extends javax.swing.JFrame {
         jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabel2.setText(bundle.getString("Dashboard.jLabel2.text")); // NOI18N
 
-        btnUser.setBackground(new java.awt.Color(50, 55, 89));
-        btnUser.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnUser.setForeground(new java.awt.Color(255, 255, 255));
-        btnUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/icons8-user-30.png"))); // NOI18N
-        btnUser.setText(bundle.getString("Dashboard.btnUser.text")); // NOI18N
-        btnUser.setActionCommand(bundle.getString("Dashboard.btnUser.actionCommand")); // NOI18N
-        btnUser.setContentAreaFilled(false);
-        btnUser.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnUser.setHideActionText(true);
-        btnUser.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        btnUser.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnUserActionPerformed(evt);
-            }
-        });
-
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
@@ -185,7 +168,7 @@ public class Dashboard extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
 
-   public void controllPanel(JPanel newPanel) {
+   public void controlPanel(JPanel newPanel) {
         MainPanel.removeAll();
         MainPanel.add(newPanel);
         MainPanel.revalidate();
@@ -194,12 +177,12 @@ public class Dashboard extends javax.swing.JFrame {
 
     private void btnExpenseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExpenseActionPerformed
         // TODO add your handling code here:
-        controllPanel(new frmExpenseView());
+        controlPanel(new frmExpenseView());
     }//GEN-LAST:event_btnExpenseActionPerformed
 
     private void btnStaffActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStaffActionPerformed
         // TODO add your handling code here:
-        controllPanel(new frmStaffView());
+        controlPanel(new frmStaffView());
     }//GEN-LAST:event_btnStaffActionPerformed
 
     private void btnLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogoutActionPerformed
@@ -208,11 +191,6 @@ public class Dashboard extends javax.swing.JFrame {
         Login frm = new Login();
         frm.setVisible(true);
     }//GEN-LAST:event_btnLogoutActionPerformed
-
-    private void btnUserActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnUserActionPerformed
-        // TODO add your handling code here:
-        controllPanel(new frmUserView());
-    }//GEN-LAST:event_btnUserActionPerformed
 
     private JButton focusedButton = null;
 

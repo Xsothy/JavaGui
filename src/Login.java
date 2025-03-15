@@ -196,13 +196,7 @@ public class Login extends javax.swing.JFrame {
             return;
         }
 
-        User user = userResponse.getData();
-
-        if (user.role.equals("Admin")) {
-            new Dashboard();
-        } else {
-            new UDashboard();
-        }
+        new Dashboard();
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed
