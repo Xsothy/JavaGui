@@ -52,7 +52,6 @@ public class DB
                   if (url == null || username == null || password == null) {
                         return Response.error("Database connection parameters not initialized");
                   }
-
                   // Create new connection
                   Class.forName("org.sqlite.JDBC");
                   connection = DriverManager.getConnection(url, username, password);

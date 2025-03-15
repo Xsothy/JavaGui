@@ -1,14 +1,14 @@
 import Support.DB;
 import Support.Response;
 import java.io.File;
+import java.nio.file.Paths;
 import java.sql.Connection;
 
 public class Main {
     public static void main(String[] args) {
         // Define the database file path
-        String dbFilePath = "C:\\Users\\Saloeun\\OneDrive\\Documents\\NetBeansProjects\\Testing_Java\\database.db";
-        
-        // Check if the database file exists
+        String dbFilePath = Paths.get("database.db").toAbsolutePath().toString();
+       // Check if the database file exists
         File dbFile = new File(dbFilePath);
         if (!dbFile.exists()) {
             System.out.println("Database file does not exist. It will be created.");
