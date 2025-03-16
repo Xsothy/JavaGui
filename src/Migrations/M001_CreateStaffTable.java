@@ -1,11 +1,13 @@
 package Migrations;
 
+import Support.Migration;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Migration to create the staff table
+ * Migration to create the staff table.
+ * This is the first migration that should be run.
  */
 public class M001_CreateStaffTable implements Migration {
     
@@ -24,7 +26,6 @@ public class M001_CreateStaffTable implements Migration {
                     "password TEXT NOT NULL," +
                     "role TEXT" +
                     ")";
-
         
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);

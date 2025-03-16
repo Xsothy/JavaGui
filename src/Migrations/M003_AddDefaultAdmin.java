@@ -1,14 +1,15 @@
 package Migrations;
 
 import Model.Staff;
-
+import Support.Migration;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 /**
- * Migration to add a default admin staff member
+ * Migration to add a default admin staff member.
+ * This migration should be run after the staff table is created.
  */
 public class M003_AddDefaultAdmin implements Migration {
     

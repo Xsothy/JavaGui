@@ -1,4 +1,7 @@
 
+import Controller.StaffController;
+import Model.Staff;
+import Repository.StaffRepository;
 import Support.DB;
 
 import java.awt.event.*;
@@ -7,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -25,10 +29,12 @@ import javax.swing.table.DefaultTableModel;
 public class frmStaffView extends javax.swing.JPanel {
 
     JPanel frmUserView = new JPanel();
+    private final StaffController staffController;
 
     public frmStaffView() {
+        staffController = new StaffController();
         initComponents();
-         btnAdd.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));  
+        btnAdd.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
         
         btnAdd.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -66,7 +72,7 @@ public class frmStaffView extends javax.swing.JPanel {
                 return c;
             }
         });
-        tblStaff.getColumnModel().getColumn(5).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+        tblStaff.getColumnModel().getColumn(4).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 if (value instanceof ImageIcon) {
@@ -78,7 +84,7 @@ public class frmStaffView extends javax.swing.JPanel {
             }
         });
         
-        tblStaff.getColumnModel().getColumn(6).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
+        tblStaff.getColumnModel().getColumn(5).setCellRenderer(new javax.swing.table.DefaultTableCellRenderer() {
             @Override
             public java.awt.Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 if (value instanceof ImageIcon) {
@@ -99,13 +105,15 @@ public class frmStaffView extends javax.swing.JPanel {
         tblStaff.getColumnModel().getColumn(2).setPreferredWidth(200);  
         tblStaff.getColumnModel().getColumn(3).setPreferredWidth(200);
         tblStaff.getColumnModel().getColumn(4).setPreferredWidth(200);  
-        tblStaff.getColumnModel().getColumn(5).setPreferredWidth(80);  
-        tblStaff.getColumnModel().getColumn(6).setPreferredWidth(80); 
+        tblStaff.getColumnModel().getColumn(5).setPreferredWidth(80);
 
         tblStaff.revalidate();
         tblStaff.repaint();
-        
-        fetchData();
+
+
+        List<Staff> staffs = staffController.getAllStaff()
+                .getData();
+        renderStaffTable(staffs);
     }
 
     /**
@@ -149,7 +157,7 @@ public class frmStaffView extends javax.swing.JPanel {
             new Object [][] {
             },
             new String [] {
-                "ID", "Name", "Phone", "Position","User_ID","","",
+                "ID", "Name", "Position","Username","","",
             }
         ));
         tblStaff.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -208,77 +216,25 @@ public class frmStaffView extends javax.swing.JPanel {
         searchUser(txtSearch.getText().trim());
     }//GEN-LAST:event_txtSearchActionPerformed
 
-    public boolean isEditing = false;  
-    public void fetchData() {
-       DefaultTableModel model = (DefaultTableModel) tblStaff.getModel();
-       model.setRowCount(0);  // Clear table before loading new data
+    public boolean isEditing = false;
 
-       try (Connection con = DB.getInstance().getConnection().getData();
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT * FROM staff ORDER BY ID ASC")) {
+    private void renderStaffTable(List<Staff> staffs) {
+        DefaultTableModel model = (DefaultTableModel) tblStaff.getModel();
+        model.setRowCount(0);
+        staffs.forEach(staff -> {
+            model.addRow(new Object[]{
+                    staff.getId(),
+                    staff.getName(),
+                    staff.getPosition(),
+                    staff.getUserName(),
+                    frmExpenseView.getImageIcon("src/img/edit.png"),
+                    frmExpenseView.getImageIcon("src/img/delete.png"),
+            });
+        });
+        tblStaff.revalidate();
+        tblStaff.repaint();
+    }
 
-           while (rs.next()) {
-               model.addRow(new Object[]{
-                   rs.getInt("ID"),
-                   rs.getString("Name"),
-                   rs.getString("Phone"),
-                   rs.getString("Position"),
-                   rs.getInt("user_id"),  // Fixed: Ensure `user_id` is an integer
-                   new ImageIcon("D:\\Y3S2\\javaII\\TestMainfrm_1\\src\\img\\edit.png"),
-                   new ImageIcon("D:\\Y3S2\\javaII\\TestMainfrm_1\\src\\img\\delete.png")
-               });
-           }
-
-           // Remove existing MouseListeners to prevent duplicate event handling
-           for (MouseListener listener : tblStaff.getMouseListeners()) {
-               tblStaff.removeMouseListener(listener);
-           }
-
-           // Add MouseListener for edit and delete actions
-           tblStaff.addMouseListener(new MouseAdapter() {
-               @Override
-               public void mouseClicked(MouseEvent e) {
-                   if (isEditing) {
-                       return;
-                   }
-                   int row = tblStaff.rowAtPoint(e.getPoint());
-                   int column = tblStaff.columnAtPoint(e.getPoint());
-
-                   if (column == 5) {  
-                       isEditing = true; 
-                       int id = (int) tblStaff.getValueAt(row, 0);
-                       String name = (String) tblStaff.getValueAt(row, 1);
-                       String phone = (String) tblStaff.getValueAt(row, 2);
-                       String position = (String) tblStaff.getValueAt(row, 3);
-                       int user_id = (int) tblStaff.getValueAt(row, 4);  
-
-                       frmStaffAdd staffAddForm = new frmStaffAdd();
-                       staffAddForm.setStaffData(id, name, phone, position, user_id);
-                       btnAdd.setEnabled(false);
-
-                       staffAddForm.addWindowListener(new WindowAdapter() {
-                           @Override
-                           public void windowClosed(WindowEvent e) {
-                               isEditing = false;
-                               btnAdd.setEnabled(true);
-                           }
-                       });
-
-                       staffAddForm.setVisible(true);
-                   } else if (column == 6) {  // Delete button clicked
-                       int id = (int) tblStaff.getValueAt(row, 0);
-                       int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete this user?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-                       if (confirm == JOptionPane.YES_OPTION) {
-                           deleteStaff(id);
-                       }
-                   }
-               }
-           });
-
-       } catch (SQLException e) {
-           JOptionPane.showMessageDialog(null, "Database connection error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-       }
-   }  
     public void deleteStaff(int staffId) {
         Connection con = null;
         PreparedStatement pstmt = null;
@@ -297,7 +253,7 @@ public class frmStaffView extends javax.swing.JPanel {
 
             if (rowsAffected > 0) {
                 JOptionPane.showMessageDialog(null, "User deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                fetchData();
+//                fetchData();
             } else {
                 JOptionPane.showMessageDialog(null, "Error: User could not be deleted.", "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -325,47 +281,17 @@ public class frmStaffView extends javax.swing.JPanel {
             });
     }
     public void searchUser(String keyword) {
-        DefaultTableModel model = (DefaultTableModel) tblStaff.getModel();
-        model.setRowCount(0);
+        List<Staff> staffs = staffController.getAllStaff()
+                .getData()
+                .stream()
+                .filter(
+                        staff -> staff.getName()
+                                .toLowerCase().
+                                contains(keyword.toLowerCase())
+                )
+                .toList();
 
-        Connection con = null;
-        PreparedStatement pstmt = null;
-        ResultSet rs = null;
-
-        try {
-            con = DB.getInstance().getConnection().getData();
-            if (con == null) {
-                throw new SQLException("Database connection failed.");
-            }
-
-            String sql = "SELECT * FROM staff WHERE LOWER(name) LIKE LOWER(?) OR LOWER(phone) LIKE LOWER(?) ORDER BY ID ASC";
-            pstmt = con.prepareStatement(sql);
-            pstmt.setString(1, "%" + keyword + "%");
-            pstmt.setString(2, "%" + keyword + "%");
-            rs = pstmt.executeQuery();
-
-            while (rs.next()) {
-                model.addRow(new Object[]{
-                    rs.getInt("ID"),
-                    rs.getString("name"),
-                    rs.getString("phone"),
-                    rs.getString("position"),
-                    rs.getInt("user_id"),
-                    new ImageIcon("D:\\Y3S2\\javaII\\TestMainfrm_1\\src\\img\\edit.png"),  
-                    new ImageIcon("D:\\Y3S2\\javaII\\TestMainfrm_1\\src\\img\\delete.png")
-                });
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(null, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } finally {
-            try {
-                if (rs != null) rs.close();
-                if (pstmt != null) pstmt.close();
-                if (con != null) con.close();
-            } catch (SQLException e) {
-                JOptionPane.showMessageDialog(null, "Error closing resources: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
+        renderStaffTable(staffs);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

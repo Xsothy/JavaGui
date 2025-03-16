@@ -23,7 +23,7 @@ public class ExpenseRepository {
     public Response<Optional<Expense>> getExpenseById(int expenseId) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, sid FROM expenses WHERE id = ?"
+                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE id = ?"
             );
             stmt.setInt(1, expenseId);
             ResultSet rs = stmt.executeQuery();
@@ -38,7 +38,7 @@ public class ExpenseRepository {
                     rs.getString("description"),
                     rs.getBigDecimal("amount"),
                     rs.getString("picture"),
-                    rs.getInt("sid")
+                    rs.getInt("staff_id")
             ));
         });
     }
@@ -47,7 +47,7 @@ public class ExpenseRepository {
         return db.execute(connection -> {
             List<Expense> expenses = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, sid FROM expenses"
+                    "SELECT id, name, description, amount, picture, staff_id FROM expenses"
             );
             ResultSet rs = stmt.executeQuery();
 
@@ -58,7 +58,7 @@ public class ExpenseRepository {
                         rs.getString("description"),
                         rs.getBigDecimal("amount"),
                         rs.getString("picture"),
-                        rs.getInt("sid")
+                        rs.getInt("staff_id")
                 );
                 expenses.add(expense);
             }
@@ -71,7 +71,7 @@ public class ExpenseRepository {
         return db.execute(connection -> {
             List<Expense> expenses = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, sid FROM expenses WHERE sid = ?"
+                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ?"
             );
             stmt.setInt(1, staffId);
             ResultSet rs = stmt.executeQuery();
@@ -83,7 +83,7 @@ public class ExpenseRepository {
                         rs.getString("description"),
                         rs.getBigDecimal("amount"),
                         rs.getString("picture"),
-                        rs.getInt("sid")
+                        rs.getInt("staff_id")
                 );
                 expenses.add(expense);
             }
@@ -95,7 +95,7 @@ public class ExpenseRepository {
     public Response<Expense> createExpense(String name, String description, BigDecimal amount, String picture, int staffId) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO expenses (name, description, amount, picture, sid) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO expenses (name, description, amount, picture, staff_id) VALUES (?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
             stmt.setString(1, name);
@@ -130,7 +130,7 @@ public class ExpenseRepository {
     public Response<Boolean> updateExpense(Expense expense) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "UPDATE expenses SET name = ?, description = ?, amount = ?, picture = ?, sid = ? WHERE id = ?"
+                    "UPDATE expenses SET name = ?, description = ?, amount = ?, picture = ?, staff_id = ? WHERE id = ?"
             );
             stmt.setString(1, expense.getName());
             stmt.setString(2, expense.getDescription());
@@ -159,7 +159,7 @@ public class ExpenseRepository {
     public Response<Boolean> deleteExpensesByStaffId(int staffId) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM expenses WHERE sid = ?"
+                    "DELETE FROM expenses WHERE staff_id = ?"
             );
             stmt.setInt(1, staffId);
 
@@ -185,7 +185,7 @@ public class ExpenseRepository {
     public Response<BigDecimal> getTotalExpenseAmountByStaffId(int staffId) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT SUM(amount) as total FROM expenses WHERE sid = ?"
+                    "SELECT SUM(amount) as total FROM expenses WHERE staff_id = ?"
             );
             stmt.setInt(1, staffId);
             ResultSet rs = stmt.executeQuery();

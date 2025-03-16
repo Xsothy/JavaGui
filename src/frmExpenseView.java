@@ -269,7 +269,7 @@ public class frmExpenseView extends javax.swing.JPanel {
         tblExpense.repaint();
     }
 
-    private ImageIcon getImageIcon(String imageName) {
+    public static ImageIcon getImageIcon(String imageName) {
          if (imageName != null && !imageName.isEmpty()) {
              Path path = Paths.get(imageName);
              File imageFile = new File(path.toAbsolutePath().toString());

@@ -1,11 +1,13 @@
 package Migrations;
 
+import Support.Migration;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 /**
- * Migration to create the expenses table
+ * Migration to create the expenses table.
+ * This migration should be run after the staff table is created.
  */
 public class M002_CreateExpensesTable implements Migration {
     

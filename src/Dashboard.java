@@ -6,7 +6,7 @@ import javax.swing.*;
 public class Dashboard extends javax.swing.JFrame {
     public Dashboard() {
         initComponents();
-        controlPanel(new frmExpenseView());
+        controlPanel(new frmStaffView());
         applyButtonStyles(btnExpense);
         applyButtonStyles(btnStaff);
         applyButtonStyles(btnLogout);
