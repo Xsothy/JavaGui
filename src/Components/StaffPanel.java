@@ -77,7 +77,7 @@ public class StaffPanel extends JPanel {
                 if (row >= 0 && e.getClickCount() == 2) {
                     // Double click to view details
                     int staffId = (int) tblStaff.getValueAt(row, 0);
-                    router.navigate("/staff/" + staffId);
+                    router.navigate("/staffs/" + staffId);
                 }
             }
         });

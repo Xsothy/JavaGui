@@ -1,6 +1,5 @@
 /dist/
 build
-.idea
 out
 /src/img/expenses
 /database.db
