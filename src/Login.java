@@ -1,22 +1,21 @@
-import Controller.UserController;
-import Model.User;
+import Controller.StaffController;
 import Support.Response;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 
 /**
  *
  * @author Login
  */
 public class Login extends javax.swing.JFrame {
+    private final StaffController staffController;
     /**
      * Creates new form Admin
      */
     public Login() {
+        this.staffController = new StaffController();
         initComponents();
         clickEnter();
     }
@@ -188,15 +187,16 @@ public class Login extends javax.swing.JFrame {
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
         String username = txtName.getText();
         String password = new String(txtPassword.getPassword());
-        Response<User> userResponse = UserController
-                .login(username, password);
+        Response<Void> userResponse = staffController
+                .validateLogin(username, password);
 
         if (!userResponse.isSuccess()) {
-            JOptionPane.showMessageDialog(this, "Error logging in > " + userResponse.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Error logging in : " + userResponse.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        new Dashboard();
+        this.dispose();
+        new Dashboard().setVisible(true);
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed

@@ -52,7 +52,7 @@ public class Dashboard extends javax.swing.JFrame {
         btnExpense.setBackground(new java.awt.Color(50, 55, 89));
         btnExpense.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         btnExpense.setForeground(new java.awt.Color(255, 255, 255));
-        btnExpense.setIcon(new javax.swing.ImageIcon(getClass().getResource("/product.png"))); // NOI18N
+        btnExpense.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/product.png"))); // NOI18N
         btnExpense.setText(bundle.getString("Dashboard.btnExpense.text")); // NOI18N
         btnExpense.setActionCommand(bundle.getString("Dashboard.btnExpense.actionCommand")); // NOI18N
         btnExpense.setContentAreaFilled(false);

@@ -1,6 +1,8 @@
 package Support;
 
-import java.util.Dictionary;
+import Model.Expense;
+
+import java.util.List;
 
 public class Response<T> {
     private String message;
@@ -16,6 +18,10 @@ public class Response<T> {
         this.message = message;
         this.status = status;
         this.data = data;
+    }
+
+    public static Response<Void> success(String message) {
+        return new Response<>(message, 200);
     }
 
     public static <T> Response<T> success(String message, T data) {

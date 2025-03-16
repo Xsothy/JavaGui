@@ -140,7 +140,7 @@ public class StaffController {
         return staffRepository.getStaffByRole(role);
     }
 
-    public Response<Boolean> validateLogin(String userName, String password) {
+    public Response<Void> validateLogin(String userName, String password) {
         if (userName == null || userName.trim().isEmpty()) {
             return Response.error("Username cannot be empty");
         }
@@ -165,6 +165,6 @@ public class StaffController {
             return Response.error("Invalid username or password");
         }
 
-        return Response.success("Login successful", true);
+        return Response.success("Login successful");
     }
 }

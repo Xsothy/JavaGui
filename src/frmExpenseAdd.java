@@ -94,22 +94,22 @@ public class frmExpenseAdd extends javax.swing.JFrame {
     }
 
     private void populateStaffComboBox() {
-        try {
-            Connection con = DB.getInstance().getConnection().getData();
-            Statement stmt = con.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT name FROM staff"); 
-            cbStaffID.removeAllItems();
-            while (rs.next()) {
-                String staffName = rs.getString("name");
-                cbStaffID.addItem(staffName);
-            }
-
-            rs.close();
-            stmt.close();
-            con.close();
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading staff data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+//        try {
+//            Connection con = DB.getInstance().getConnection().getData();
+//            Statement stmt = con.createStatement();
+//            ResultSet rs = stmt.executeQuery("SELECT name FROM staff");
+//            cbStaffID.removeAllItems();
+//            while (rs.next()) {
+//                String staffName = rs.getString("name");
+//                cbStaffID.addItem(staffName);
+//            }
+//
+//            rs.close();
+//            stmt.close();
+//            con.close();
+//        } catch (SQLException e) {
+//            JOptionPane.showMessageDialog(this, "Error loading staff data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+//        }
     }
     private void clickEnter(){
         txtDate.addKeyListener(new KeyAdapter() {
@@ -414,7 +414,7 @@ public class frmExpenseAdd extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Expense added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                 if (parentForm != null) {
-                    parentForm.fetchData();
+                    parentForm.renderExpenseTable();
                 }
                 dispose(); 
                 resetForm();
@@ -423,7 +423,7 @@ public class frmExpenseAdd extends javax.swing.JFrame {
                 JOptionPane.showMessageDialog(this, "Expense updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
 
                 if (parentForm != null) {
-                    parentForm.fetchData(); 
+                    parentForm.renderExpenseTable();
                     this.dispose();
                 }
             }
@@ -463,105 +463,106 @@ public class frmExpenseAdd extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_btnImageActionPerformed
     private void saveExpenseToDatabase(int staffId, double amount, String createdAt, String descText, String selectedImagePath) throws SQLException, IOException {
-        String uploadDir = "D:/Y3S2/javaII/Testing_Java/src/Expenses/"; 
-        String imageName = null;
-
-        File directory = new File(uploadDir);
-        if (!directory.exists()) {
-            directory.mkdirs(); 
-        }
-
-        if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-            File sourceFile = new File(selectedImagePath);
-            if (sourceFile.exists()) {  
-                String extension = selectedImagePath.substring(selectedImagePath.lastIndexOf("."));
-                imageName = UUID.randomUUID().toString() + extension;
-                File destinationFile = new File(uploadDir + imageName);
-
-                Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } else {
-                System.out.println("Error: Selected image file does not exist!");
-            }
-        }
-
-        String query = "INSERT INTO expense (date, `desc`, amount, picture, sid) VALUES (?, ?, ?, ?, ?)";
-        try (Connection con = DB.getInstance().getConnection().getData();
-             PreparedStatement stmt = con.prepareStatement(query)) {
-
-            stmt.setString(1, createdAt);
-            stmt.setString(2, descText);
-            stmt.setDouble(3, amount);
-
-            if (imageName != null) {
-                stmt.setString(4, imageName); 
-            } else {
-                stmt.setNull(4, java.sql.Types.VARCHAR);
-            }
-
-            stmt.setInt(5, staffId);
-
-            int rowsInserted = stmt.executeUpdate();
-            if (rowsInserted == 0) {
-                throw new SQLException("Failed to insert the expense.");
-            }
-        }
+        //FIXME: fix
+        //        String uploadDir = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
+//        String imageName = null;
+//
+//        File directory = new File(uploadDir);
+//        if (!directory.exists()) {
+//            directory.mkdirs(); 
+//        }
+//
+//        if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
+//            File sourceFile = new File(selectedImagePath);
+//            if (sourceFile.exists()) {  
+//                String extension = selectedImagePath.substring(selectedImagePath.lastIndexOf("."));
+//                imageName = UUID.randomUUID().toString() + extension;
+//                File destinationFile = new File(uploadDir + imageName);
+//
+//                Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+//            } else {
+//                System.out.println("Error: Selected image file does not exist!");
+//            }
+//        }
+//
+//        String query = "INSERT INTO expense (date, `desc`, amount, picture, sid) VALUES (?, ?, ?, ?, ?)";
+//        try (Connection con = DB.getInstance().getConnection().getData();
+//             PreparedStatement stmt = con.prepareStatement(query)) {
+//
+//            stmt.setString(1, createdAt);
+//            stmt.setString(2, descText);
+//            stmt.setDouble(3, amount);
+//
+//            if (imageName != null) {
+//                stmt.setString(4, imageName); 
+//            } else {
+//                stmt.setNull(4, java.sql.Types.VARCHAR);
+//            }
+//
+//            stmt.setInt(5, staffId);
+//
+//            int rowsInserted = stmt.executeUpdate();
+//            if (rowsInserted == 0) {
+//                throw new SQLException("Failed to insert the expense.");
+//            }
+//        }
     }
 
     private void updateExpenseInDatabase(int expenseId, int staffId, double amount, String createdAt, String descText, String selectedImagePath) throws SQLException {
-      String targetFolder = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
-      String imageFileName = null;
-
-      if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-          File sourceFile = new File(selectedImagePath);
-          imageFileName = sourceFile.getName();
-          File targetFile = new File(targetFolder + imageFileName);
-
-          try {
-              Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-          } catch (IOException e) {
-              throw new SQLException("Error saving image: " + e.getMessage());
-          }
-      } else {
-          String query = "SELECT picture FROM expense WHERE id = ?";
-          try (Connection con = DB.getInstance().getConnection().getData();
-               PreparedStatement stmt = con.prepareStatement(query)) {
-              stmt.setInt(1, expenseId);
-              try (ResultSet rs = stmt.executeQuery()) {
-                  if (rs.next()) {
-                      imageFileName = rs.getString("picture");
-                  }
-              }
-          } catch (SQLException e) {
-              throw new SQLException("Error retrieving current image: " + e.getMessage());
-          }
-      }
-
-      String updateQuery = "UPDATE expense SET date = ?, `desc` = ?, amount = ?, picture = ?, sid = ? WHERE id = ?";
-      try (Connection con = DB.getInstance().getConnection().getData();
-           PreparedStatement stmt = con.prepareStatement(updateQuery)) {
-          stmt.setString(1, createdAt);
-          stmt.setString(2, descText);
-          stmt.setDouble(3, amount);
-
-          if (imageFileName != null) {
-              stmt.setString(4, imageFileName);
-          } else {
-              stmt.setNull(4, java.sql.Types.VARCHAR);
-          }
-
-          stmt.setInt(5, staffId);
-          stmt.setInt(6, expenseId);
-
-          int rowsUpdated = stmt.executeUpdate();
-          if (rowsUpdated == 0) {
-              throw new SQLException("No rows updated, please check the expense ID.");
-          }
-      }
+//      String targetFolder = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
+//      String imageFileName = null;
+//
+//      if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
+//          File sourceFile = new File(selectedImagePath);
+//          imageFileName = sourceFile.getName();
+//          File targetFile = new File(targetFolder + imageFileName);
+//
+//          try {
+//              Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+//          } catch (IOException e) {
+//              throw new SQLException("Error saving image: " + e.getMessage());
+//          }
+//      } else {
+//          String query = "SELECT picture FROM expense WHERE id = ?";
+//          try (Connection con = DB.getInstance().getConnection().getData();
+//               PreparedStatement stmt = con.prepareStatement(query)) {
+//              stmt.setInt(1, expenseId);
+//              try (ResultSet rs = stmt.executeQuery()) {
+//                  if (rs.next()) {
+//                      imageFileName = rs.getString("picture");
+//                  }
+//              }
+//          } catch (SQLException e) {
+//              throw new SQLException("Error retrieving current image: " + e.getMessage());
+//          }
+//      }
+//
+//      String updateQuery = "UPDATE expense SET date = ?, `desc` = ?, amount = ?, picture = ?, sid = ? WHERE id = ?";
+//      try (Connection con = DB.getInstance().getConnection().getData();
+//           PreparedStatement stmt = con.prepareStatement(updateQuery)) {
+//          stmt.setString(1, createdAt);
+//          stmt.setString(2, descText);
+//          stmt.setDouble(3, amount);
+//
+//          if (imageFileName != null) {
+//              stmt.setString(4, imageFileName);
+//          } else {
+//              stmt.setNull(4, java.sql.Types.VARCHAR);
+//          }
+//
+//          stmt.setInt(5, staffId);
+//          stmt.setInt(6, expenseId);
+//
+//          int rowsUpdated = stmt.executeUpdate();
+//          if (rowsUpdated == 0) {
+//              throw new SQLException("No rows updated, please check the expense ID.");
+//          }
+//      }
   }
 
     private int getStaffIdByName(String staffName) throws SQLException {
         String query = "SELECT id FROM staff WHERE name = ?";
-        try (Connection con = DB.getInstance().getConnection().getData();
+        try (Connection con = (Connection) DB.getInstance().getConnection().getData();
              PreparedStatement stmt = con.prepareStatement(query)) {
 
             stmt.setString(1, staffName);

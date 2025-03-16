@@ -53,13 +53,10 @@ public class DB
                         return Response.error("Database connection parameters not initialized");
                   }
                   // Create new connection
-                  Class.forName("org.sqlite.JDBC");
                   connection = DriverManager.getConnection(url, username, password);
                   return Response.success("Database connection established successfully", connection);
             } catch (SQLException e) {
                   return Response.error("Failed to connect to database: " + e.getMessage());
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
             }
       }
 

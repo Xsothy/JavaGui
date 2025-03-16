@@ -3,7 +3,6 @@ package Repository;
 import Model.Staff;
 import Support.DB;
 import Support.Response;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +21,7 @@ public class StaffRepository {
     public Response<Optional<Staff>> getStaffById(int staffId) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, position, user_name, password, role FROM staff WHERE id = ?"
+                    "SELECT id, name, position, username, password, role FROM staff WHERE id = ?"
             );
             stmt.setInt(1, staffId);
             ResultSet rs = stmt.executeQuery();
@@ -35,7 +34,7 @@ public class StaffRepository {
                     rs.getInt("id"),
                     rs.getString("name"),
                     rs.getString("position"),
-                    rs.getString("user_name"),
+                    rs.getString("username"),
                     rs.getString("password"),
                     rs.getString("role")
             ));
@@ -45,7 +44,7 @@ public class StaffRepository {
     public Response<Optional<Staff>> getStaffByUserName(String userName) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, position, user_name, password, role FROM staff WHERE user_name = ?"
+                    "SELECT id, name, position, username, password, role FROM staff WHERE username = ?"
             );
             stmt.setString(1, userName);
             ResultSet rs = stmt.executeQuery();
@@ -58,7 +57,7 @@ public class StaffRepository {
                     rs.getInt("id"),
                     rs.getString("name"),
                     rs.getString("position"),
-                    rs.getString("user_name"),
+                    rs.getString("username"),
                     rs.getString("password"),
                     rs.getString("role")
             ));
@@ -69,7 +68,7 @@ public class StaffRepository {
         return db.execute(connection -> {
             List<Staff> staffList = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, position, user_name, password, role FROM staff"
+                    "SELECT id, name, position, username, password, role FROM staff"
             );
             ResultSet rs = stmt.executeQuery();
 
@@ -78,7 +77,7 @@ public class StaffRepository {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("position"),
-                        rs.getString("user_name"),
+                        rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role")
                 );
@@ -92,7 +91,7 @@ public class StaffRepository {
     public Response<Staff> createStaff(String name, String position, String userName, String password, String role) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO staff (name, position, user_name, password, role) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO staff (name, position, username, password, role) VALUES (?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
             stmt.setString(1, name);
@@ -127,7 +126,7 @@ public class StaffRepository {
     public Response<Boolean> updateStaff(Staff staff) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "UPDATE staff SET name = ?, position = ?, user_name = ?, role = ? WHERE id = ?"
+                    "UPDATE staff SET name = ?, position = ?, username = ?, role = ? WHERE id = ?"
             );
             stmt.setString(1, staff.getName());
             stmt.setString(2, staff.getPosition());
@@ -143,7 +142,7 @@ public class StaffRepository {
     public Response<Boolean> updateStaffWithPassword(Staff staff, String newPassword) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "UPDATE staff SET name = ?, position = ?, user_name = ?, password = ?, role = ? WHERE id = ?"
+                    "UPDATE staff SET name = ?, position = ?, username = ?, password = ?, role = ? WHERE id = ?"
             );
             stmt.setString(1, staff.getName());
             stmt.setString(2, staff.getPosition());
@@ -173,7 +172,7 @@ public class StaffRepository {
         return db.execute(connection -> {
             List<Staff> staffList = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, position, user_name, password, role FROM staff WHERE role = ?"
+                    "SELECT id, name, position, username, password, role FROM staff WHERE role = ?"
             );
             stmt.setString(1, role);
             ResultSet rs = stmt.executeQuery();
@@ -183,7 +182,7 @@ public class StaffRepository {
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("position"),
-                        rs.getString("user_name"),
+                        rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role")
                 );
@@ -197,7 +196,7 @@ public class StaffRepository {
     public Response<Boolean> checkStaffExists(String userName) {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM staff WHERE user_name = ?"
+                    "SELECT COUNT(*) FROM staff WHERE username = ?"
             );
             stmt.setString(1, userName);
             ResultSet rs = stmt.executeQuery();
