@@ -187,7 +187,7 @@ public class ExpenseRepository {
         try {
             return db.execute(connection -> {
                 var stmt = connection.prepareStatement(
-                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.email " +
+                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.role " +
                     "FROM expenses e " +
                     "JOIN staff s ON e.staff_id = s.id " +
                     "WHERE e.id = ?"
@@ -214,7 +214,7 @@ public class ExpenseRepository {
                     rs.getString("position"),
                     rs.getString("username"),
                     rs.getString("password"),
-                    rs.getString("email")
+                    rs.getString("role")
                 );
                 
                 return Optional.of(new ExpenseWithStaff(expense, staff));
@@ -236,7 +236,7 @@ public class ExpenseRepository {
                 var expensesWithStaff = new ArrayList<ExpenseWithStaff>();
                 var stmt = connection.createStatement();
                 var rs = stmt.executeQuery(
-                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.email " +
+                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.role " +
                     "FROM expenses e " +
                     "JOIN staff s ON e.staff_id = s.id"
                 );
@@ -257,7 +257,7 @@ public class ExpenseRepository {
                         rs.getString("position"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("email")
+                        rs.getString("role")
                     );
                     
                     expensesWithStaff.add(new ExpenseWithStaff(expense, staff));
@@ -282,7 +282,7 @@ public class ExpenseRepository {
             return db.execute(connection -> {
                 var results = new ArrayList<ExpenseWithStaff>();
                 var stmt = connection.prepareStatement(
-                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.email " +
+                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.role " +
                     "FROM expenses e " +
                     "JOIN staff s ON e.staff_id = s.id " +
                     "WHERE e.name LIKE ? OR e.description LIKE ? OR s.name LIKE ?"
@@ -310,7 +310,7 @@ public class ExpenseRepository {
                         rs.getString("position"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("email")
+                        rs.getString("role")
                     );
                     
                     results.add(new ExpenseWithStaff(expense, staff));
