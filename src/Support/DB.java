@@ -2,6 +2,10 @@ package Support;
 
 import java.sql.*;
 
+/**
+ * Database connection manager.
+ * Implements the singleton pattern to provide a single database connection throughout the application.
+ */
 public class DB
 {
       private static DB instance;
@@ -27,7 +31,7 @@ public class DB
       }
 
       /**
-       * Get singleton instance of Container
+       * Get singleton instance of DB
        */
       public static DB getInstance() {
             if (instance == null) {
@@ -38,62 +42,50 @@ public class DB
 
       /**
        * Get database connection with error handling
-       * @return Response object with connection data or error message
+       * 
+       * @return The database connection
+       * @throws SQLException If a database error occurs
+       * @throws IllegalStateException If connection parameters are not initialized
        */
-      public Response<Connection> getConnection() {
-            try {
-                  
-                  // Check if we already have a valid connection
-                  if (connection != null && !connection.isClosed()) {
-                        return Response.success("Database connection retrieved successfully", connection);
-                  }
-
-                  // Check if connection parameters are set
-                  if (url == null || username == null || password == null) {
-                        return Response.error("Database connection parameters not initialized");
-                  }
-                  // Create new connection
-                  connection = DriverManager.getConnection(url, username, password);
-                  return Response.success("Database connection established successfully", connection);
-            } catch (SQLException e) {
-                  return Response.error("Failed to connect to database: " + e.getMessage());
+      public Connection getConnection() throws SQLException, IllegalStateException {
+            // Check if we already have a valid connection
+            if (connection != null && !connection.isClosed()) {
+                  return connection;
             }
+
+            // Check if connection parameters are set
+            if (url == null || username == null || password == null) {
+                  throw new IllegalStateException("Database connection parameters not initialized");
+            }
+
+            // Create new connection
+            connection = DriverManager.getConnection(url, username, password);
+            return connection;
       }
 
       /**
        * Close the database connection safely
-       * @return Response indicating success or failure
+       * 
+       * @throws SQLException If a database error occurs
        */
-      public Response<Void> closeConnection() {
-            try {
-                  if (connection != null && !connection.isClosed()) {
-                        connection.close();
-                        connection = null;
-                        return Response.success("Database connection closed successfully", null);
-                  }
-                  return Response.success("No active connection to close", null);
-            } catch (SQLException e) {
-                  return Response.error("Error closing database connection: " + e.getMessage());
+      public void closeConnection() throws SQLException {
+            if (connection != null && !connection.isClosed()) {
+                  connection.close();
+                  connection = null;
             }
       }
 
       /**
        * Execute a database operation with automatic error handling
+       * 
        * @param operation The database operation to execute
-       * @return Response with the operation result or error message
+       * @return The result of the operation
+       * @throws SQLException If a database error occurs
+       * @throws IllegalStateException If connection parameters are not initialized
        */
-      public <T> Response<T> execute(DB.DatabaseOperation<T> operation) {
-            Response<Connection> connectionResponse = getConnection();
-            if (!connectionResponse.isSuccess()) {
-                  return Response.error(connectionResponse.getMessage());
-            }
-
-            try {
-                  T result = operation.execute(connectionResponse.getData());
-                  return Response.success("Operation executed successfully", result);
-            } catch (SQLException e) {
-                  return Response.error("Database operation failed: " + e.getMessage());
-            }
+      public <T> T execute(DatabaseOperation<T> operation) throws SQLException, IllegalStateException {
+            Connection conn = getConnection();
+            return operation.execute(conn);
       }
 
       /**

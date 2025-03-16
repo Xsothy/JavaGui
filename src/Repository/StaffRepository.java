@@ -2,7 +2,6 @@ package Repository;
 
 import Model.Staff;
 import Support.DB;
-import Support.Response;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +10,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for managing staff data in the database.
+ */
 public class StaffRepository {
     private static DB db;
 
@@ -18,7 +20,14 @@ public class StaffRepository {
         db = DB.getInstance();
     }
 
-    public Response<Optional<Staff>> getStaffById(int staffId) {
+    /**
+     * Get a staff member by ID.
+     * 
+     * @param staffId The ID of the staff member
+     * @return An Optional containing the staff member if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Staff> getStaffById(int staffId) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, name, position, username, password, role FROM staff WHERE id = ?"
@@ -41,7 +50,14 @@ public class StaffRepository {
         });
     }
 
-    public Response<Optional<Staff>> getStaffByUserName(String userName) {
+    /**
+     * Get a staff member by username.
+     * 
+     * @param userName The username of the staff member
+     * @return An Optional containing the staff member if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Staff> getStaffByUserName(String userName) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, name, position, username, password, role FROM staff WHERE username = ?"
@@ -64,31 +80,45 @@ public class StaffRepository {
         });
     }
 
-    public Response<List<Staff>> getAllStaff() {
+    /**
+     * Get all staff members.
+     * 
+     * @return A list of all staff members
+     * @throws SQLException If a database error occurs
+     */
+    public List<Staff> getAllStaff() throws SQLException {
         return db.execute(connection -> {
             List<Staff> staffList = new ArrayList<>();
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, position, username, password, role FROM staff"
-            );
-            ResultSet rs = stmt.executeQuery();
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT id, name, position, username, password, role FROM staff");
 
             while (rs.next()) {
-                Staff staff = new Staff(
+                staffList.add(new Staff(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("position"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role")
-                );
-                staffList.add(staff);
+                ));
             }
 
             return staffList;
         });
     }
 
-    public Response<Staff> createStaff(String name, String position, String userName, String password, String role) {
+    /**
+     * Create a new staff member.
+     * 
+     * @param name The name of the staff member
+     * @param position The position of the staff member
+     * @param userName The username of the staff member
+     * @param password The password of the staff member
+     * @param role The role of the staff member
+     * @return The created staff member with its ID
+     * @throws SQLException If a database error occurs
+     */
+    public Staff createStaff(String name, String position, String userName, String password, String role) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO staff (name, position, username, password, role) VALUES (?, ?, ?, ?, ?)",
@@ -97,33 +127,38 @@ public class StaffRepository {
             stmt.setString(1, name);
             stmt.setString(2, position);
             stmt.setString(3, userName);
-            stmt.setString(4, Staff.hashPassword(password));
+            stmt.setString(4, password);
             stmt.setString(5, role);
 
-            int rowsInserted = stmt.executeUpdate();
-
-            if (rowsInserted == 0) {
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
                 throw new SQLException("Creating staff failed, no rows affected.");
             }
 
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return new Staff(
-                            generatedKeys.getInt(1),
-                            name,
-                            position,
-                            userName,
-                            Staff.hashPassword(password),
-                            role
-                    );
-                } else {
-                    throw new SQLException("Creating staff failed, no ID obtained.");
-                }
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return new Staff(
+                        generatedKeys.getInt(1),
+                        name,
+                        position,
+                        userName,
+                        password,
+                        role
+                );
+            } else {
+                throw new SQLException("Creating staff failed, no ID obtained.");
             }
         });
     }
 
-    public Response<Boolean> updateStaff(Staff staff) {
+    /**
+     * Update a staff member.
+     * 
+     * @param staff The staff member to update
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateStaff(Staff staff) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE staff SET name = ?, position = ?, username = ?, role = ? WHERE id = ?"
@@ -134,12 +169,19 @@ public class StaffRepository {
             stmt.setString(4, staff.getRole());
             stmt.setInt(5, staff.getId());
 
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
+            return stmt.executeUpdate() > 0;
         });
     }
 
-    public Response<Boolean> updateStaffWithPassword(Staff staff, String newPassword) {
+    /**
+     * Update a staff member with a new password.
+     * 
+     * @param staff The staff member to update
+     * @param newPassword The new password
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateStaffWithPassword(Staff staff, String newPassword) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE staff SET name = ?, position = ?, username = ?, password = ?, role = ? WHERE id = ?"
@@ -147,28 +189,37 @@ public class StaffRepository {
             stmt.setString(1, staff.getName());
             stmt.setString(2, staff.getPosition());
             stmt.setString(3, staff.getUserName());
-            stmt.setString(4, Staff.hashPassword(newPassword));
+            stmt.setString(4, newPassword);
             stmt.setString(5, staff.getRole());
             stmt.setInt(6, staff.getId());
 
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
+            return stmt.executeUpdate() > 0;
         });
     }
 
-    public Response<Boolean> deleteStaff(int staffId) {
+    /**
+     * Delete a staff member.
+     * 
+     * @param staffId The ID of the staff member to delete
+     * @return true if the deletion was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean deleteStaff(int staffId) throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM staff WHERE id = ?"
-            );
+            PreparedStatement stmt = connection.prepareStatement("DELETE FROM staff WHERE id = ?");
             stmt.setInt(1, staffId);
-
-            int rowsDeleted = stmt.executeUpdate();
-            return rowsDeleted > 0;
+            return stmt.executeUpdate() > 0;
         });
     }
 
-    public Response<List<Staff>> getStaffByRole(String role) {
+    /**
+     * Get staff members by role.
+     * 
+     * @param role The role to filter by
+     * @return A list of staff members with the specified role
+     * @throws SQLException If a database error occurs
+     */
+    public List<Staff> getStaffByRole(String role) throws SQLException {
         return db.execute(connection -> {
             List<Staff> staffList = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
@@ -178,47 +229,51 @@ public class StaffRepository {
             ResultSet rs = stmt.executeQuery();
 
             while (rs.next()) {
-                Staff staff = new Staff(
+                staffList.add(new Staff(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("position"),
                         rs.getString("username"),
                         rs.getString("password"),
                         rs.getString("role")
-                );
-                staffList.add(staff);
+                ));
             }
 
             return staffList;
         });
     }
 
-    public Response<Boolean> checkStaffExists(String userName) {
+    /**
+     * Check if a staff member with the given username exists.
+     * 
+     * @param userName The username to check
+     * @return true if a staff member with the username exists, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean checkStaffExists(String userName) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT COUNT(*) FROM staff WHERE username = ?"
             );
             stmt.setString(1, userName);
             ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-            return false;
+            rs.next();
+            return rs.getInt(1) > 0;
         });
     }
 
-    public Response<Integer> countStaff() {
+    /**
+     * Count the number of staff members.
+     * 
+     * @return The number of staff members
+     * @throws SQLException If a database error occurs
+     */
+    public int countStaff() throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM staff"
-            );
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-            return 0;
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM staff");
+            rs.next();
+            return rs.getInt(1);
         });
     }
 }

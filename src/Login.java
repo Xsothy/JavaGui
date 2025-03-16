@@ -1,5 +1,5 @@
 import Controller.StaffController;
-import Support.Response;
+import java.sql.SQLException;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
@@ -187,16 +187,17 @@ public class Login extends javax.swing.JFrame {
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
         String username = txtName.getText();
         String password = new String(txtPassword.getPassword());
-        Response<Void> userResponse = staffController
-                .validateLogin(username, password);
-
-        if (!userResponse.isSuccess()) {
-            JOptionPane.showMessageDialog(this, "Error logging in : " + userResponse.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
+        
+        try {
+            staffController.validateLogin(username, password);
+            // If we get here, login was successful
+            this.dispose();
+            new Dashboard().setVisible(true);
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Error logging in: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-
-        this.dispose();
-        new Dashboard().setVisible(true);
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed

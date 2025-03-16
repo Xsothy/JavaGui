@@ -2,8 +2,6 @@ package Repository;
 
 import Model.User;
 import Support.DB;
-import Support.Response;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -12,6 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for managing user data in the database.
+ * Note: This repository is deprecated as the application now uses staff for authentication.
+ * It is kept for backward compatibility.
+ */
+@Deprecated
 public class UserRepository {
     private static DB db;
 
@@ -19,10 +23,45 @@ public class UserRepository {
         db = DB.getInstance();
     }
 
-    public Response<Optional<User>> getUserByUsername(String username) {
+    /**
+     * Get a user by ID.
+     * 
+     * @param userId The ID of the user
+     * @return An Optional containing the user if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<User> getUserById(int userId) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, username, password, email, role FROM users WHERE username = ?"
+                    "SELECT id, username, password, role FROM users WHERE id = ?"
+            );
+            stmt.setInt(1, userId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (!rs.next()) {
+                return Optional.empty();
+            }
+
+            return Optional.of(new User(
+                    rs.getInt("id"),
+                    rs.getString("username"),
+                    rs.getString("password"),
+                    rs.getString("role")
+            ));
+        });
+    }
+
+    /**
+     * Get a user by username.
+     * 
+     * @param username The username of the user
+     * @return An Optional containing the user if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<User> getUserByUsername(String username) throws SQLException {
+        return db.execute(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(
+                    "SELECT id, username, password, role FROM users WHERE username = ?"
             );
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
@@ -35,205 +74,162 @@ public class UserRepository {
                     rs.getInt("id"),
                     rs.getString("username"),
                     rs.getString("password"),
-                    rs.getString("email"),
                     rs.getString("role")
             ));
         });
     }
 
-    public Response<Optional<User>> getUserById(int userId) {
+    /**
+     * Get all users.
+     * 
+     * @return A list of all users
+     * @throws SQLException If a database error occurs
+     */
+    public List<User> getAllUsers() throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, username, password, email, role FROM users WHERE id = ?"
-            );
-            stmt.setInt(1, userId);
-            ResultSet rs = stmt.executeQuery();
-
-            if (!rs.next()) {
-                return Optional.empty();
-            }
-
-            return Optional.of(
-                    new User(
-                            rs.getInt("id"),
-                            rs.getString("username"),
-                            rs.getString("password"),
-                            rs.getString("email"),
-                            rs.getString("role")
-                    )
-            );
-        });
-    }
-
-    public Response<List<User>> getAllUsers() {
-        return db.execute(connection -> {
-            List<User> users = new ArrayList<>();
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, username, password, email, role FROM users"
-            );
-            ResultSet rs = stmt.executeQuery();
+            List<User> userList = new ArrayList<>();
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT id, username, password, role FROM users");
 
             while (rs.next()) {
-                User user = new User(
+                userList.add(new User(
                         rs.getInt("id"),
                         rs.getString("username"),
                         rs.getString("password"),
-                        rs.getString("email"),
                         rs.getString("role")
-                );
-                users.add(user);
+                ));
             }
 
-            return users;
+            return userList;
         });
     }
 
-    public Response<User> createUser(String username, String password) {
-        return this.createUser(username, password, "", "user");
-    }
-
-    public Response<User> createUser(String username, String password, String email) {
-        return this.createUser(username, password, email, "user");
-    }
-
-    public Response<User> createUser(String username, String password, String email, String role) {
+    /**
+     * Create a new user.
+     * 
+     * @param username The username of the user
+     * @param password The password of the user
+     * @param role The role of the user
+     * @return The created user with its ID
+     * @throws SQLException If a database error occurs
+     */
+    public User createUser(String username, String password, String role) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
-                    "INSERT INTO users (username, password, email, role) VALUES (?, ?, ?, ?)",
+                    "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS
             );
             stmt.setString(1, username);
-            stmt.setString(2, User.hashPassword(password));
-            stmt.setString(3, email);
-            stmt.setString(4, role);
+            stmt.setString(2, password);
+            stmt.setString(3, role);
 
-            int rowsInserted = stmt.executeUpdate();
-
-            if (rowsInserted == 0) {
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
                 throw new SQLException("Creating user failed, no rows affected.");
             }
 
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return new User(
-                            generatedKeys.getInt(1),
-                            username,
-                            User.hashPassword(password),
-                            email,
-                            role
-                    );
-                } else {
-                    throw new SQLException("Creating user failed, no ID obtained.");
-                }
-            }
-        });
-    }
-
-    public Response<Boolean> updateUser(User user) {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "UPDATE users SET username = ?, email = ?, role = ? WHERE id = ?"
-            );
-            stmt.setString(1, user.username);
-            stmt.setString(2, user.email);
-            stmt.setString(3, user.role);
-            stmt.setInt(4, user.id);
-
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
-        });
-    }
-
-    public Response<Boolean> updateUserWithPassword(User user, String newPassword) {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "UPDATE users SET username = ?, password = ?, email = ?, role = ? WHERE id = ?"
-            );
-            stmt.setString(1, user.username);
-            stmt.setString(2, User.hashPassword(newPassword));
-            stmt.setString(3, user.email);
-            stmt.setString(4, user.role);
-            stmt.setInt(5, user.id);
-
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
-        });
-    }
-
-    public Response<Boolean> deleteUser(int userId) {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM users WHERE id = ?"
-            );
-            stmt.setInt(1, userId);
-
-            int rowsDeleted = stmt.executeUpdate();
-            return rowsDeleted > 0;
-        });
-    }
-
-    public Response<Boolean> deleteUserByUsername(String username) {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM users WHERE username = ?"
-            );
-            stmt.setString(1, username);
-
-            int rowsDeleted = stmt.executeUpdate();
-            return rowsDeleted > 0;
-        });
-    }
-
-    public Response<List<User>> getUsersByRole(String role) {
-        return db.execute(connection -> {
-            List<User> users = new ArrayList<>();
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, username, password, email, role FROM users WHERE role = ?"
-            );
-            stmt.setString(1, role);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                User user = new User(
-                        rs.getInt("id"),
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getString("email"),
-                        rs.getString("role")
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return new User(
+                        generatedKeys.getInt(1),
+                        username,
+                        password,
+                        role
                 );
-                users.add(user);
+            } else {
+                throw new SQLException("Creating user failed, no ID obtained.");
             }
-
-            return users;
         });
     }
 
-    public Response<Boolean> checkUserExists(String username) {
+    /**
+     * Update a user.
+     * 
+     * @param user The user to update
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateUser(User user) throws SQLException {
+        return db.execute(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(
+                    "UPDATE users SET username = ?, role = ? WHERE id = ?"
+            );
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, user.getRole());
+            stmt.setInt(3, user.getId());
+
+            return stmt.executeUpdate() > 0;
+        });
+    }
+
+    /**
+     * Update a user with a new password.
+     * 
+     * @param user The user to update
+     * @param newPassword The new password
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateUserWithPassword(User user, String newPassword) throws SQLException {
+        return db.execute(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(
+                    "UPDATE users SET username = ?, password = ?, role = ? WHERE id = ?"
+            );
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, newPassword);
+            stmt.setString(3, user.getRole());
+            stmt.setInt(4, user.getId());
+
+            return stmt.executeUpdate() > 0;
+        });
+    }
+
+    /**
+     * Delete a user.
+     * 
+     * @param userId The ID of the user to delete
+     * @return true if the deletion was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean deleteUser(int userId) throws SQLException {
+        return db.execute(connection -> {
+            PreparedStatement stmt = connection.prepareStatement("DELETE FROM users WHERE id = ?");
+            stmt.setInt(1, userId);
+            return stmt.executeUpdate() > 0;
+        });
+    }
+
+    /**
+     * Check if a user with the given username exists.
+     * 
+     * @param username The username to check
+     * @return true if a user with the username exists, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean checkUserExists(String username) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT COUNT(*) FROM users WHERE username = ?"
             );
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1) > 0;
-            }
-            return false;
+            rs.next();
+            return rs.getInt(1) > 0;
         });
     }
 
-    public Response<Integer> countUsers() {
+    /**
+     * Count the number of users.
+     * 
+     * @return The number of users
+     * @throws SQLException If a database error occurs
+     */
+    public int countUsers() throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM users"
-            );
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-            return 0;
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM users");
+            rs.next();
+            return rs.getInt(1);
         });
     }
 }

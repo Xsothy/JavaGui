@@ -3,26 +3,50 @@ package Model;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * User model class.
+ * Note: This class is deprecated as the application now uses Staff for authentication.
+ * It is kept for backward compatibility.
+ */
+@Deprecated
 public class User {
-    public int id;
-    public String username;
-    public String password;
-    public String email;
-    public String role;
+    private int id;
+    private String username;
+    private String password;
+    private String role;
 
-    public User(int id, String username, String password, String email, String role) {
+    /**
+     * Creates a new User with the specified ID, username, password, and role.
+     * 
+     * @param id The user ID
+     * @param username The username
+     * @param password The password (should be hashed)
+     * @param role The user role
+     */
+    public User(int id, String username, String password, String role) {
         this.id = id;
         this.username = username;
         this.password = password;
-        this.email = email;
         this.role = role;
     }
 
-    public boolean checkPassword(String password)
-    {
-        return password.equals(hashPassword(password));
+    /**
+     * Checks if the provided password matches the stored password.
+     * 
+     * @param password The password to check
+     * @return true if the password matches, false otherwise
+     */
+    public boolean checkPassword(String password) {
+        return this.password.equals(hashPassword(password));
     }
 
+    /**
+     * Hashes a password using MD5.
+     * Note: MD5 is not secure for password hashing in production.
+     * 
+     * @param password The password to hash
+     * @return The hashed password
+     */
     public static String hashPassword(String password) {
         MessageDigest md = null;
         try {
@@ -39,5 +63,59 @@ public class User {
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Gets the user ID.
+     * 
+     * @return The user ID
+     */
+    public int getId() {
+        return id;
+    }
+
+    /**
+     * Gets the username.
+     * 
+     * @return The username
+     */
+    public String getUsername() {
+        return username;
+    }
+
+    /**
+     * Gets the password.
+     * 
+     * @return The password
+     */
+    public String getPassword() {
+        return password;
+    }
+
+    /**
+     * Gets the user role.
+     * 
+     * @return The user role
+     */
+    public String getRole() {
+        return role;
+    }
+
+    /**
+     * Sets the username of this user.
+     * 
+     * @param username The new username
+     */
+    public void setUsername(String username) {
+        this.username = username;
+    }
+    
+    /**
+     * Sets the role of this user.
+     * 
+     * @param role The new role
+     */
+    public void setRole(String role) {
+        this.role = role;
     }
 }

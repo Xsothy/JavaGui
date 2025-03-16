@@ -2,8 +2,6 @@ package Repository;
 
 import Model.Expense;
 import Support.DB;
-import Support.Response;
-
 import java.math.BigDecimal;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -13,6 +11,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository for managing expense data in the database.
+ */
 public class ExpenseRepository {
     private static DB db;
 
@@ -20,7 +21,14 @@ public class ExpenseRepository {
         db = DB.getInstance();
     }
 
-    public Response<Optional<Expense>> getExpenseById(int expenseId) {
+    /**
+     * Get an expense by ID.
+     * 
+     * @param expenseId The ID of the expense
+     * @return An Optional containing the expense if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Expense> getExpenseById(int expenseId) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE id = ?"
@@ -43,56 +51,45 @@ public class ExpenseRepository {
         });
     }
 
-    public Response<List<Expense>> getAllExpenses() {
+    /**
+     * Get all expenses.
+     * 
+     * @return A list of all expenses
+     * @throws SQLException If a database error occurs
+     */
+    public List<Expense> getAllExpenses() throws SQLException {
         return db.execute(connection -> {
-            List<Expense> expenses = new ArrayList<>();
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, staff_id FROM expenses"
-            );
-            ResultSet rs = stmt.executeQuery();
+            List<Expense> expenseList = new ArrayList<>();
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT id, name, description, amount, picture, staff_id FROM expenses");
 
             while (rs.next()) {
-                Expense expense = new Expense(
+                expenseList.add(new Expense(
                         rs.getInt("id"),
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getBigDecimal("amount"),
                         rs.getString("picture"),
                         rs.getInt("staff_id")
-                );
-                expenses.add(expense);
+                ));
             }
 
-            return expenses;
+            return expenseList;
         });
     }
 
-    public Response<List<Expense>> getExpensesByStaffId(int staffId) {
-        return db.execute(connection -> {
-            List<Expense> expenses = new ArrayList<>();
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ?"
-            );
-            stmt.setInt(1, staffId);
-            ResultSet rs = stmt.executeQuery();
-
-            while (rs.next()) {
-                Expense expense = new Expense(
-                        rs.getInt("id"),
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getBigDecimal("amount"),
-                        rs.getString("picture"),
-                        rs.getInt("staff_id")
-                );
-                expenses.add(expense);
-            }
-
-            return expenses;
-        });
-    }
-
-    public Response<Expense> createExpense(String name, String description, BigDecimal amount, String picture, int staffId) {
+    /**
+     * Create a new expense.
+     * 
+     * @param name The name of the expense
+     * @param description The description of the expense
+     * @param amount The amount of the expense
+     * @param picture The picture URL of the expense
+     * @param staffId The ID of the staff member who created the expense
+     * @return The created expense with its ID
+     * @throws SQLException If a database error occurs
+     */
+    public Expense createExpense(String name, String description, BigDecimal amount, String picture, int staffId) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "INSERT INTO expenses (name, description, amount, picture, staff_id) VALUES (?, ?, ?, ?, ?)",
@@ -104,30 +101,35 @@ public class ExpenseRepository {
             stmt.setString(4, picture);
             stmt.setInt(5, staffId);
 
-            int rowsInserted = stmt.executeUpdate();
-
-            if (rowsInserted == 0) {
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 0) {
                 throw new SQLException("Creating expense failed, no rows affected.");
             }
 
-            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return new Expense(
-                            generatedKeys.getInt(1),
-                            name,
-                            description,
-                            amount,
-                            picture,
-                            staffId
-                    );
-                } else {
-                    throw new SQLException("Creating expense failed, no ID obtained.");
-                }
+            ResultSet generatedKeys = stmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return new Expense(
+                        generatedKeys.getInt(1),
+                        name,
+                        description,
+                        amount,
+                        picture,
+                        staffId
+                );
+            } else {
+                throw new SQLException("Creating expense failed, no ID obtained.");
             }
         });
     }
 
-    public Response<Boolean> updateExpense(Expense expense) {
+    /**
+     * Update an expense.
+     * 
+     * @param expense The expense to update
+     * @return true if the update was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateExpense(Expense expense) throws SQLException {
         return db.execute(connection -> {
             PreparedStatement stmt = connection.prepareStatement(
                     "UPDATE expenses SET name = ?, description = ?, amount = ?, picture = ?, staff_id = ? WHERE id = ?"
@@ -139,76 +141,68 @@ public class ExpenseRepository {
             stmt.setInt(5, expense.getStaffId());
             stmt.setInt(6, expense.getId());
 
-            int rowsUpdated = stmt.executeUpdate();
-            return rowsUpdated > 0;
+            return stmt.executeUpdate() > 0;
         });
     }
 
-    public Response<Boolean> deleteExpense(int expenseId) {
+    /**
+     * Delete an expense.
+     * 
+     * @param expenseId The ID of the expense to delete
+     * @return true if the deletion was successful, false otherwise
+     * @throws SQLException If a database error occurs
+     */
+    public boolean deleteExpense(int expenseId) throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM expenses WHERE id = ?"
-            );
+            PreparedStatement stmt = connection.prepareStatement("DELETE FROM expenses WHERE id = ?");
             stmt.setInt(1, expenseId);
-
-            int rowsDeleted = stmt.executeUpdate();
-            return rowsDeleted > 0;
+            return stmt.executeUpdate() > 0;
         });
     }
 
-    public Response<Boolean> deleteExpensesByStaffId(int staffId) {
+    /**
+     * Get expenses by staff ID.
+     * 
+     * @param staffId The ID of the staff member
+     * @return A list of expenses created by the staff member
+     * @throws SQLException If a database error occurs
+     */
+    public List<Expense> getExpensesByStaffId(int staffId) throws SQLException {
         return db.execute(connection -> {
+            List<Expense> expenseList = new ArrayList<>();
             PreparedStatement stmt = connection.prepareStatement(
-                    "DELETE FROM expenses WHERE staff_id = ?"
-            );
-            stmt.setInt(1, staffId);
-
-            int rowsDeleted = stmt.executeUpdate();
-            return rowsDeleted > 0;
-        });
-    }
-
-    public Response<BigDecimal> getTotalExpenseAmount() {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT SUM(amount) as total FROM expenses"
-            );
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getBigDecimal("total");
-            }
-            return BigDecimal.ZERO;
-        });
-    }
-
-    public Response<BigDecimal> getTotalExpenseAmountByStaffId(int staffId) {
-        return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT SUM(amount) as total FROM expenses WHERE staff_id = ?"
+                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ?"
             );
             stmt.setInt(1, staffId);
             ResultSet rs = stmt.executeQuery();
 
-            if (rs.next()) {
-                BigDecimal result = rs.getBigDecimal("total");
-                return result != null ? result : BigDecimal.ZERO;
+            while (rs.next()) {
+                expenseList.add(new Expense(
+                        rs.getInt("id"),
+                        rs.getString("name"),
+                        rs.getString("description"),
+                        rs.getBigDecimal("amount"),
+                        rs.getString("picture"),
+                        rs.getInt("staff_id")
+                ));
             }
-            return BigDecimal.ZERO;
+
+            return expenseList;
         });
     }
 
-    public Response<Integer> countExpenses() {
+    /**
+     * Count the number of expenses.
+     * 
+     * @return The number of expenses
+     * @throws SQLException If a database error occurs
+     */
+    public int countExpenses() throws SQLException {
         return db.execute(connection -> {
-            PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT COUNT(*) FROM expenses"
-            );
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                return rs.getInt(1);
-            }
-            return 0;
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM expenses");
+            rs.next();
+            return rs.getInt(1);
         });
     }
 }

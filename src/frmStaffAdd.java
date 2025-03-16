@@ -1,15 +1,14 @@
-
-import Support.DB;
+import Controller.StaffController;
+import Model.Staff;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
-import java.util.Set;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JOptionPane;
 /**
  *
@@ -19,30 +18,33 @@ public class frmStaffAdd extends javax.swing.JFrame {
     private String name;
     private String tel;
     private String position;
-    private int user_id;
+    private String role;
     private int id = -1;
+    private final StaffController staffController;
 
     public void setUserId(int sId) {
         this.id = sId;
     }
 
-    public void setStaffData(int id, String name, String tel, String position, int user_id) {
+    public void setStaffData(int id, String name, String tel, String position, String role) {
         this.id = id;
         this.name = name;
         this.tel = tel;
         this.position = position;
-        this.user_id = user_id;
+        this.role = role;
 
         txtName.setText(name);
         txtPosition.setText(position);
         txtTel.setText(tel);
-        cbUserID.setSelectedItem(user_id);
+        cbRole.setSelectedItem(role);
     }
+    
     public frmStaffAdd() {
+        this.staffController = new StaffController();
         initComponents();
         clickEnter();
         
-        populateUserCategoryComboBox();
+        populateRoleComboBox();
     }
 
     private void clickEnter(){
@@ -54,7 +56,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
                 }
             }
         });
-        cbUserID.addKeyListener(new KeyAdapter() {
+        cbRole.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
@@ -81,7 +83,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
         Customer = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
         jLabel8 = new javax.swing.JLabel();
-        cbUserID = new javax.swing.JComboBox<>();
+        cbRole = new javax.swing.JComboBox<>();
         txtPosition = new javax.swing.JTextField();
         jLabel9 = new javax.swing.JLabel();
 
@@ -171,7 +173,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
         jLabel8.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         jLabel8.setText(bundle.getString("frmStaffAdd.jLabel8.text")); // NOI18N
 
-        cbUserID.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        cbRole.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
 
         txtPosition.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
         txtPosition.setText(bundle.getString("frmStaffAdd.txtPosition.text")); // NOI18N
@@ -201,7 +203,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
                         .addComponent(btnClose, javax.swing.GroupLayout.PREFERRED_SIZE, 116, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addComponent(txtName)
                     .addComponent(txtTel)
-                    .addComponent(cbUserID, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(cbRole, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 322, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -223,7 +225,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
                     .addComponent(txtPosition, javax.swing.GroupLayout.PREFERRED_SIZE, 51, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 48, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(cbUserID, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(cbRole, javax.swing.GroupLayout.PREFERRED_SIZE, 46, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel9))
                 .addGap(40, 40, 40)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
@@ -241,76 +243,69 @@ public class frmStaffAdd extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCloseActionPerformed
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-         String name = txtName.getText();
-         String phone = txtTel.getText();
-         String position = txtPosition.getText();
-         String user_id = Objects.requireNonNull(cbUserID.getSelectedItem()).toString();
+        String name = txtName.getText();
+        String phone = txtTel.getText();
+        String position = txtPosition.getText();
+        String role = Objects.requireNonNull(cbRole.getSelectedItem()).toString();
 
-         if (name.isEmpty() || phone.isEmpty() || position.isEmpty() || user_id.isEmpty()) {
-             JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
-             return;
-         }
+        if (name.isEmpty() || phone.isEmpty() || position.isEmpty() || role.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please fill in all fields.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-         Connection conn = DB.getInstance().getConnection().getData();
-         if (conn != null) {
-             try {
-                 if (id == -1) { 
-                     String checkStaffSQL = "SELECT * FROM staff WHERE Name = ? OR phone = ?";
-                     PreparedStatement checkStmt = conn.prepareStatement(checkStaffSQL);
-                     checkStmt.setString(1, name);
-                     checkStmt.setString(2, phone);
-                     ResultSet rs = checkStmt.executeQuery();
-
-                     if (rs.next()) {
-                         JOptionPane.showMessageDialog(this, "Staff with this name or phone already exists.", "Error", JOptionPane.ERROR_MESSAGE);
-                     } else {
-                         String insertSQL = "INSERT INTO staff (Name, phone, Position, user_Id) VALUES (?, ?, ?, ?)";
-                         PreparedStatement insertStmt = conn.prepareStatement(insertSQL);
-                         insertStmt.setString(1, name);
-                         insertStmt.setString(2, phone);
-                         insertStmt.setString(3, position);
-                         insertStmt.setInt(4, Integer.parseInt(user_id)); // Ensure user_id is an integer
-                         int rowsInserted = insertStmt.executeUpdate();
-
-                         if (rowsInserted > 0) {
-                             JOptionPane.showMessageDialog(this, "Staff added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                             dispose();
-                         } else {
-                             JOptionPane.showMessageDialog(this, "Error adding staff.", "Error", JOptionPane.ERROR_MESSAGE);
-                         }
-
-                         insertStmt.close();
-                     }
-
-                     rs.close();
-                     checkStmt.close();
-                 } else { 
-                     String updateSQL = "UPDATE staff SET Name = ?, phone = ?, Position = ?, user_Id = ? WHERE ID = ?";
-                     PreparedStatement updateStmt = conn.prepareStatement(updateSQL);
-                     updateStmt.setString(1, name);
-                     updateStmt.setString(2, phone);
-                     updateStmt.setString(3, position);
-                     updateStmt.setInt(4, Integer.parseInt(user_id)); // Ensure user_id is an integer
-                     updateStmt.setInt(5, id); // Use the 'id' variable
-                     int rowsUpdated = updateStmt.executeUpdate();
-
-                     if (rowsUpdated > 0) {
-                         JOptionPane.showMessageDialog(this, "Staff updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-                         dispose();
-                     } else {
-                         JOptionPane.showMessageDialog(this, "Error updating staff.", "Error", JOptionPane.ERROR_MESSAGE);
-                     }
-
-                     updateStmt.close();
-                 }
-
-                 conn.close();
-             } catch (Exception e) {
-                 JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-             }
-         } else {
-             JOptionPane.showMessageDialog(this, "Database connection failed!", "Error", JOptionPane.ERROR_MESSAGE);
-         }
+        try {
+            if (id == -1) { // Create new staff
+                try {
+                    // Check if staff with this name already exists
+                    List<Staff> staffList = staffController.getAllStaff();
+                    boolean nameExists = staffList.stream()
+                            .anyMatch(s -> s.getName().equalsIgnoreCase(name));
+                    
+                    if (nameExists) {
+                        JOptionPane.showMessageDialog(this, "Staff with this name already exists.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    // Create the staff with username same as name
+                    String username = name.toLowerCase().replace(" ", "_");
+                    String defaultPassword = "password123"; // Default password that can be changed later
+                    
+                    Staff newStaff = staffController.createStaff(name, position, username, defaultPassword, role);
+                    JOptionPane.showMessageDialog(this, "Staff added successfully! Default username: " + username + ", Default password: " + defaultPassword, 
+                            "Success", JOptionPane.INFORMATION_MESSAGE);
+                    dispose();
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else { // Update existing staff
+                try {
+                    // Get the existing staff
+                    Optional<Staff> staffOpt = staffController.getStaffById(id);
+                    if (staffOpt.isEmpty()) {
+                        JOptionPane.showMessageDialog(this, "Staff not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    Staff staff = staffOpt.get();
+                    staff.setName(name);
+                    staff.setPosition(position);
+                    staff.setRole(role);
+                    
+                    boolean updated = staffController.updateStaff(staff);
+                    if (updated) {
+                        JOptionPane.showMessageDialog(this, "Staff updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                        dispose();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Error updating staff.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (IllegalArgumentException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(frmStaffAdd.class.getName()).log(Level.SEVERE, "Database error", ex);
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnSaveActionPerformed
 
     private void txtNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_txtNameActionPerformed
@@ -321,29 +316,15 @@ public class frmStaffAdd extends javax.swing.JFrame {
         txtName.setText("");
         txtTel.setText("");
         txtPosition.setText("");
-        cbUserID.getSelectedItem().toString();
+        cbRole.setSelectedIndex(0);
     }
-    private void populateUserCategoryComboBox() {
-    Connection con = DB.getInstance().getConnection().getData();
-    if (con != null) {
-        String getStaffQuery = "SELECT id AS user_id FROM user s";
-        try (PreparedStatement stmt = con.prepareStatement(getStaffQuery)) {
-            ResultSet rs = stmt.executeQuery();
-            Set<String> UserSet = new HashSet<>();
-            while (rs.next()) {
-                String userName = rs.getString("user_id");
-                UserSet.add(userName);
-            }
-            for (String staff : UserSet) {
-                cbUserID.addItem(staff);
-            }
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error fetching user names: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-    } else {
-        JOptionPane.showMessageDialog(this, "Failed to connect to the database.", "Error", JOptionPane.ERROR_MESSAGE);
+    
+    private void populateRoleComboBox() {
+        cbRole.removeAllItems();
+        cbRole.addItem("admin");
+        cbRole.addItem("staff");
+        cbRole.addItem("manager");
     }
-}
     /**
      * @param args the command line arguments
      */
@@ -384,7 +365,7 @@ public class frmStaffAdd extends javax.swing.JFrame {
     private javax.swing.JLabel Customer;
     private javax.swing.JButton btnClose;
     private javax.swing.JButton btnSave;
-    private javax.swing.JComboBox<String> cbUserID;
+    private javax.swing.JComboBox<String> cbRole;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;

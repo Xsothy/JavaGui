@@ -4,147 +4,236 @@ import Model.Expense;
 import Model.Staff;
 import Repository.ExpenseRepository;
 import Repository.StaffRepository;
-import Support.Response;
-
+import Support.FileUtils;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
+/**
+ * Controller for managing expense operations.
+ * Provides business logic and validation for expense-related operations.
+ */
 public class ExpenseController {
+    private static final Logger LOGGER = Logger.getLogger(ExpenseController.class.getName());
+    
     private final ExpenseRepository expenseRepository;
     private final StaffRepository staffRepository;
 
+    /**
+     * Creates a new ExpenseController.
+     */
     public ExpenseController() {
         this.expenseRepository = new ExpenseRepository();
         this.staffRepository = new StaffRepository();
+        
+        // Ensure the expense images directory exists
+        File directory = new File("src/img/expenses/");
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
     }
 
-    public Response<List<Expense>> getAllExpenses() {
+    /**
+     * Gets all expenses.
+     * 
+     * @return A list of all expenses
+     * @throws SQLException If a database error occurs
+     */
+    public List<Expense> getAllExpenses() throws SQLException {
         return expenseRepository.getAllExpenses();
     }
 
-    public Response<Optional<Expense>> getExpenseById(int id) {
+    /**
+     * Gets an expense by ID.
+     * 
+     * @param id The ID of the expense
+     * @return An Optional containing the expense if found, or empty if not found
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Expense> getExpenseById(int id) throws IllegalArgumentException, SQLException {
         if (id <= 0) {
-            return Response.error("Invalid expense ID");
+            throw new IllegalArgumentException("Invalid expense ID");
         }
         return expenseRepository.getExpenseById(id);
     }
 
-    public Response<List<Expense>> getExpensesByStaffId(int staffId) {
+    /**
+     * Gets expenses by staff ID.
+     * 
+     * @param staffId The ID of the staff member
+     * @return A list of expenses created by the staff member
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public List<Expense> getExpensesByStaffId(int staffId) throws IllegalArgumentException, SQLException {
         if (staffId <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> staffResponse = staffRepository.getStaffById(staffId);
-        if (!staffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + staffResponse.getMessage());
-        }
-        if (staffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        Optional<Staff> staffOpt = staffRepository.getStaffById(staffId);
+        if (staffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
 
         return expenseRepository.getExpensesByStaffId(staffId);
     }
 
-    public Response<List<Expense>> getExpensesByStaffName(String staffName) {
+    /**
+     * Gets expenses by staff username.
+     * 
+     * @param staffName The username of the staff member
+     * @return A list of expenses created by the staff member
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public List<Expense> getExpensesByStaffName(String staffName) throws IllegalArgumentException, SQLException {
         if (staffName == null || staffName.trim().isEmpty()) {
-            return Response.error("Staff name cannot be empty");
+            throw new IllegalArgumentException("Staff name cannot be empty");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> staffResponse = staffRepository.getStaffByUserName(staffName);
-        if (!staffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + staffResponse.getMessage());
-        }
-        if (staffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        Optional<Staff> staffOpt = staffRepository.getStaffByUserName(staffName);
+        if (staffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
 
-        return expenseRepository.getExpensesByStaffId(staffResponse.getData().get().getId());
+        return expenseRepository.getExpensesByStaffId(staffOpt.get().getId());
     }
 
-    public Response<Expense> createExpense(String name, String description, BigDecimal amount, String picture, int staffId) {
+    /**
+     * Creates a new expense.
+     * 
+     * @param name The name of the expense
+     * @param description The description of the expense
+     * @param amount The amount of the expense
+     * @param imagePath The path to the expense image
+     * @param staffId The ID of the staff member who created the expense
+     * @return The created expense
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     * @throws IOException If an error occurs while handling the image file
+     */
+    public Expense createExpense(String name, String description, BigDecimal amount, String imagePath, int staffId) 
+            throws IllegalArgumentException, SQLException, IOException {
         // Validate input
         if (name == null || name.trim().isEmpty()) {
-            return Response.error("Expense name cannot be empty");
+            throw new IllegalArgumentException("Expense name cannot be empty");
         }
         if (description == null || description.trim().isEmpty()) {
-            return Response.error("Expense description cannot be empty");
+            throw new IllegalArgumentException("Expense description cannot be empty");
         }
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            return Response.error("Expense amount cannot be empty");
-        }
-        if (picture == null || picture.trim().isEmpty()) {
-            return Response.error("Expense picture cannot be empty");
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
         }
         if (staffId <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> staffResponse = staffRepository.getStaffById(staffId);
-        if (!staffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + staffResponse.getMessage());
+        Optional<Staff> staffOpt = staffRepository.getStaffById(staffId);
+        if (staffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
-        if (staffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        
+        // Handle image file if provided
+        String savedImagePath = null;
+        if (imagePath != null && !imagePath.trim().isEmpty()) {
+            savedImagePath = FileUtils.saveExpenseImage(imagePath);
+            if (savedImagePath == null) {
+                throw new IOException("Failed to save image file");
+            }
         }
-
-        return expenseRepository.createExpense(name, description, amount, picture, staffId);
+        
+        // Create expense with saved image path
+        return expenseRepository.createExpense(name, description, amount, savedImagePath, staffId);
     }
-
-    public Response<Boolean> updateExpense(Expense expense) {
+    
+    /**
+     * Updates an expense.
+     * 
+     * @param expense The expense to update
+     * @param newImagePath The path to the new expense image, or null to keep the existing image
+     * @return true if the update was successful, false otherwise
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     * @throws IOException If an error occurs while handling the image file
+     */
+    public boolean updateExpense(Expense expense, String newImagePath) 
+            throws IllegalArgumentException, SQLException, IOException {
         // Validate input
         if (expense == null) {
-            return Response.error("Expense cannot be null");
+            throw new IllegalArgumentException("Expense cannot be null");
         }
         if (expense.getId() <= 0) {
-            return Response.error("Invalid expense ID");
+            throw new IllegalArgumentException("Invalid expense ID");
         }
         if (expense.getName() == null || expense.getName().trim().isEmpty()) {
-            return Response.error("Expense name cannot be empty");
+            throw new IllegalArgumentException("Expense name cannot be empty");
         }
         if (expense.getDescription() == null || expense.getDescription().trim().isEmpty()) {
-            return Response.error("Expense description cannot be empty");
+            throw new IllegalArgumentException("Expense description cannot be empty");
         }
         if (expense.getAmount() == null || expense.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            return Response.error("Expense amount cannot be empty");
-        }
-        if (expense.getPicture() == null || expense.getPicture().trim().isEmpty()) {
-            return Response.error("Expense picture cannot be empty");
+            throw new IllegalArgumentException("Expense amount must be greater than zero");
         }
         if (expense.getStaffId() <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
 
+        // Check if expense exists
+        Optional<Expense> existingExpenseOpt = expenseRepository.getExpenseById(expense.getId());
+        if (existingExpenseOpt.isEmpty()) {
+            throw new IllegalArgumentException("Expense not found");
+        }
+        
         // Check if staff exists
-        Response<Optional<Staff>> staffResponse = staffRepository.getStaffById(expense.getStaffId());
-        if (!staffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + staffResponse.getMessage());
+        Optional<Staff> staffOpt = staffRepository.getStaffById(expense.getStaffId());
+        if (staffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
-        if (staffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        
+        // Handle image file if a new one is provided
+        if (newImagePath != null && !newImagePath.trim().isEmpty()) {
+            String savedImagePath = FileUtils.saveExpenseImage(newImagePath);
+            if (savedImagePath == null) {
+                throw new IOException("Failed to save image file");
+            }
+            expense.setPicture(savedImagePath);
         }
-
+        
         return expenseRepository.updateExpense(expense);
     }
 
-    public Response<Boolean> deleteExpense(int expenseId) {
+    /**
+     * Deletes an expense.
+     * 
+     * @param expenseId The ID of the expense to delete
+     * @return true if the deletion was successful, false otherwise
+     * @throws IllegalArgumentException If the input is invalid or the expense doesn't exist
+     * @throws SQLException If a database error occurs
+     */
+    public boolean deleteExpense(int expenseId) throws IllegalArgumentException, SQLException {
         // Validate input
         if (expenseId <= 0) {
-            return Response.error("Invalid expense ID");
+            throw new IllegalArgumentException("Invalid expense ID");
         }
 
-        // Check if staff exists
-        Response<Optional<Expense>> expenseResponse = expenseRepository.getExpenseById(expenseId);
-        if (!expenseResponse.isSuccess()) {
-            return Response.error("Error accessing expense data: " + expenseResponse.getMessage());
-        }
-        if (expenseResponse.getData().isEmpty()) {
-            return Response.error("Expense not found");
+        // Check if expense exists
+        Optional<Expense> expenseOpt = expenseRepository.getExpenseById(expenseId);
+        if (expenseOpt.isEmpty()) {
+            throw new IllegalArgumentException("Expense not found");
         }
 
-        return expenseRepository.deleteExpense(expenseId);
+        boolean deleted = expenseRepository.deleteExpense(expenseId);
+        if (!deleted) {
+            throw new SQLException("Failed to delete expense with ID: " + expenseId);
+        }
+        return true;
     }
 }

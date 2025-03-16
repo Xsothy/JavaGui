@@ -2,49 +2,85 @@ package Controller;
 
 import Model.Staff;
 import Repository.StaffRepository;
-import Support.Response;
-
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Controller for managing staff operations.
+ * Provides business logic and validation for staff-related operations.
+ */
 public class StaffController {
     private final StaffRepository staffRepository;
 
+    /**
+     * Creates a new StaffController.
+     */
     public StaffController() {
         this.staffRepository = new StaffRepository();
     }
 
-    public Response<List<Staff>> getAllStaff() {
+    /**
+     * Gets all staff members.
+     * 
+     * @return A list of all staff members
+     * @throws SQLException If a database error occurs
+     */
+    public List<Staff> getAllStaff() throws SQLException {
         return staffRepository.getAllStaff();
     }
 
-    public Response<Optional<Staff>> getStaffById(int id) {
+    /**
+     * Gets a staff member by ID.
+     * 
+     * @param id The ID of the staff member
+     * @return An Optional containing the staff member if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Staff> getStaffById(int id) throws SQLException {
         return staffRepository.getStaffById(id);
     }
 
-    public Response<Optional<Staff>> getStaffByUserName(String userName) {
+    /**
+     * Gets a staff member by username.
+     * 
+     * @param userName The username of the staff member
+     * @return An Optional containing the staff member if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<Staff> getStaffByUserName(String userName) throws SQLException {
         return staffRepository.getStaffByUserName(userName);
     }
 
-    public Response<Staff> createStaff(String name, String position, String userName, String password, String role) {
+    /**
+     * Creates a new staff member.
+     * 
+     * @param name The name of the staff member
+     * @param position The position of the staff member
+     * @param userName The username of the staff member
+     * @param password The password of the staff member
+     * @param role The role of the staff member
+     * @return The created staff member
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public Staff createStaff(String name, String position, String userName, String password, String role) 
+            throws IllegalArgumentException, SQLException {
         // Validate input
         if (name == null || name.trim().isEmpty()) {
-            return Response.error("Staff name cannot be empty");
+            throw new IllegalArgumentException("Staff name cannot be empty");
         }
         if (userName == null || userName.trim().isEmpty()) {
-            return Response.error("Username cannot be empty");
+            throw new IllegalArgumentException("Username cannot be empty");
         }
         if (password == null || password.trim().isEmpty()) {
-            return Response.error("Password cannot be empty");
+            throw new IllegalArgumentException("Password cannot be empty");
         }
 
         // Check if username already exists
-        Response<Boolean> existsResponse = staffRepository.checkStaffExists(userName);
-        if (!existsResponse.isSuccess()) {
-            return Response.error("Error checking username: " + existsResponse.getMessage());
-        }
-        if (existsResponse.getData()) {
-            return Response.error("Username already exists");
+        boolean exists = staffRepository.checkStaffExists(userName);
+        if (exists) {
+            throw new IllegalArgumentException("Username already exists");
         }
 
         // Default role if not provided
@@ -52,119 +88,154 @@ public class StaffController {
             role = "staff";
         }
 
-        return staffRepository.createStaff(name, position, userName, password, role);
+        // Hash the password before storing
+        String hashedPassword = Staff.hashPassword(password);
+        
+        return staffRepository.createStaff(name, position, userName, hashedPassword, role);
     }
 
-    public Response<Boolean> updateStaff(Staff staff) {
+    /**
+     * Updates a staff member.
+     * 
+     * @param staff The staff member to update
+     * @return true if the update was successful, false otherwise
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateStaff(Staff staff) throws IllegalArgumentException, SQLException {
         // Validate input
         if (staff == null) {
-            return Response.error("Staff cannot be null");
+            throw new IllegalArgumentException("Staff cannot be null");
         }
         if (staff.getId() <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
         if (staff.getName() == null || staff.getName().trim().isEmpty()) {
-            return Response.error("Staff name cannot be empty");
+            throw new IllegalArgumentException("Staff name cannot be empty");
         }
         if (staff.getUserName() == null || staff.getUserName().trim().isEmpty()) {
-            return Response.error("Username cannot be empty");
+            throw new IllegalArgumentException("Username cannot be empty");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> existingStaffResponse = staffRepository.getStaffById(staff.getId());
-        if (!existingStaffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + existingStaffResponse.getMessage());
-        }
-        if (existingStaffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        Optional<Staff> existingStaffOpt = staffRepository.getStaffById(staff.getId());
+        if (existingStaffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
 
         // Check if the username is changed and already exists
-        Staff existingStaff = existingStaffResponse.getData().get();
+        Staff existingStaff = existingStaffOpt.get();
         if (!existingStaff.getUserName().equals(staff.getUserName())) {
-            Response<Boolean> existsResponse = staffRepository.checkStaffExists(staff.getUserName());
-            if (existsResponse.isSuccess() && existsResponse.getData()) {
-                return Response.error("Username already exists");
+            boolean exists = staffRepository.checkStaffExists(staff.getUserName());
+            if (exists) {
+                throw new IllegalArgumentException("Username already exists");
             }
         }
 
         return staffRepository.updateStaff(staff);
     }
 
-    public Response<Boolean> updateStaffWithPassword(Staff staff, String newPassword) {
+    /**
+     * Updates a staff member with a new password.
+     * 
+     * @param staff The staff member to update
+     * @param newPassword The new password
+     * @return true if the update was successful, false otherwise
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public boolean updateStaffWithPassword(Staff staff, String newPassword) 
+            throws IllegalArgumentException, SQLException {
         // Validate input
         if (staff == null) {
-            return Response.error("Staff cannot be null");
+            throw new IllegalArgumentException("Staff cannot be null");
         }
         if (staff.getId() <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
         if (newPassword == null || newPassword.trim().isEmpty()) {
-            return Response.error("Password cannot be empty");
+            throw new IllegalArgumentException("Password cannot be empty");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> existingStaffResponse = staffRepository.getStaffById(staff.getId());
-        if (!existingStaffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + existingStaffResponse.getMessage());
-        }
-        if (existingStaffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        Optional<Staff> existingStaffOpt = staffRepository.getStaffById(staff.getId());
+        if (existingStaffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
 
-        return staffRepository.updateStaffWithPassword(staff, newPassword);
+        // Hash the password before storing
+        String hashedPassword = Staff.hashPassword(newPassword);
+        
+        return staffRepository.updateStaffWithPassword(staff, hashedPassword);
     }
 
-    public Response<Boolean> deleteStaff(int id) {
+    /**
+     * Deletes a staff member.
+     * 
+     * @param id The ID of the staff member to delete
+     * @return true if the deletion was successful, false otherwise
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public boolean deleteStaff(int id) throws IllegalArgumentException, SQLException {
         // Validate input
         if (id <= 0) {
-            return Response.error("Invalid staff ID");
+            throw new IllegalArgumentException("Invalid staff ID");
         }
 
         // Check if staff exists
-        Response<Optional<Staff>> existingStaffResponse = staffRepository.getStaffById(id);
-        if (!existingStaffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + existingStaffResponse.getMessage());
-        }
-        if (existingStaffResponse.getData().isEmpty()) {
-            return Response.error("Staff not found");
+        Optional<Staff> existingStaffOpt = staffRepository.getStaffById(id);
+        if (existingStaffOpt.isEmpty()) {
+            throw new IllegalArgumentException("Staff not found");
         }
 
         return staffRepository.deleteStaff(id);
     }
 
-    public Response<List<Staff>> getStaffByRole(String role) {
+    /**
+     * Gets staff members by role.
+     * 
+     * @param role The role to filter by
+     * @return A list of staff members with the specified role
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public List<Staff> getStaffByRole(String role) throws IllegalArgumentException, SQLException {
         if (role == null || role.trim().isEmpty()) {
-            return Response.error("Role cannot be empty");
+            throw new IllegalArgumentException("Role cannot be empty");
         }
         return staffRepository.getStaffByRole(role);
     }
 
-    public Response<Void> validateLogin(String userName, String password) {
+    /**
+     * Validates a login attempt.
+     * 
+     * @param userName The username
+     * @param password The password
+     * @throws IllegalArgumentException If the login is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public void validateLogin(String userName, String password) 
+            throws IllegalArgumentException, SQLException {
         if (userName == null || userName.trim().isEmpty()) {
-            return Response.error("Username cannot be empty");
+            throw new IllegalArgumentException("Username cannot be empty");
         }
         if (password == null || password.trim().isEmpty()) {
-            return Response.error("Password cannot be empty");
+            throw new IllegalArgumentException("Password cannot be empty");
         }
 
-        Response<Optional<Staff>> staffResponse = staffRepository.getStaffByUserName(userName);
-        if (!staffResponse.isSuccess()) {
-            return Response.error("Error accessing staff data: " + staffResponse.getMessage());
-        }
-
-        Optional<Staff> staffOpt = staffResponse.getData();
+        Optional<Staff> staffOpt = staffRepository.getStaffByUserName(userName);
         if (staffOpt.isEmpty()) {
-            return Response.error("Invalid username or password");
+            throw new IllegalArgumentException("Invalid username or password");
         }
 
         Staff staff = staffOpt.get();
         String hashedPassword = Staff.hashPassword(password);
 
         if (!hashedPassword.equals(staff.getPassword())) {
-            return Response.error("Invalid username or password");
+            throw new IllegalArgumentException("Invalid username or password");
         }
-
-        return Response.success("Login successful");
+        
+        // Login successful, no exception thrown
     }
 }

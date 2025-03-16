@@ -3,39 +3,39 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 
-import Controller.UserController;
+import Controller.StaffController;
+import Model.Staff;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.Objects;
+import javax.swing.JOptionPane;
 
 /**
- *
+ * SignUp form for creating new staff members.
  * @author Login
  */
-    public class SignUp extends javax.swing.JFrame {
+public class SignUp extends javax.swing.JFrame {
 
     private String username;
-    private String email;
     private String role;
-
-
     private int userId = -1;  
+    private final StaffController staffController;
 
     public void setUserId(int userId) {
         this.userId = userId;
     }
 
-    public void setUserData(int id, String username, String email, String role) {
+    public void setUserData(int id, String username, String role) {
         this.userId = id;
         txtName.setText(username);
-        txtEmail.setText(email);
         cbRole.setSelectedItem(role);
     }
 
     public SignUp() {
         initComponents();
+        staffController = new StaffController();
     }
 
     /**
@@ -213,13 +213,31 @@ import java.util.Objects;
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-      
         String username = txtName.getText();
         String password = new String(txtPassword.getPassword());
-        String email = txtEmail.getText();
         String role = Objects.requireNonNull(cbRole.getSelectedItem()).toString();
-
-        UserController.register(username, password, email, role);
+        
+        if (username == null || username.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Username cannot be empty", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        if (password == null || password.trim().isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Password cannot be empty", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        try {
+            // Create a new staff member with the username as both name and username
+            Staff newStaff = staffController.createStaff(username, "Staff Member", username, password, role);
+            JOptionPane.showMessageDialog(this, "Staff created successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+            this.dispose();
+            new Login().setVisible(true);
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, "Error creating staff: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }//GEN-LAST:event_btnSaveActionPerformed
 
     public static String hashPassword(String password) {

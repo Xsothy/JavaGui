@@ -2,6 +2,8 @@ import Support.DB;
 import Support.MigrationManager;
 import java.io.File;
 import java.sql.Connection;
+import java.sql.SQLException;
+import javax.swing.JOptionPane;
 
 /**
  * Main entry point for the application.
@@ -20,6 +22,10 @@ public class Main {
             new Login().setVisible(true);
         } else {
             System.err.println("Failed to initialize database. Application cannot start.");
+            JOptionPane.showMessageDialog(null, 
+                "Failed to initialize database. Application cannot start.", 
+                "Database Error", 
+                JOptionPane.ERROR_MESSAGE);
         }
     }
     
@@ -53,7 +59,7 @@ public class Main {
         
         // Test the connection and create the database file if it doesn't exist
         try {
-            Connection conn = DB.getInstance().getConnection().getData();
+            Connection conn = DB.getInstance().getConnection();
             System.out.println("Database connection successful. Database file is ready.");
             
             // Run migrations
@@ -61,8 +67,16 @@ public class Main {
             migrationManager.migrate();
             
             return true;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.err.println("Error connecting to database: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (IllegalStateException e) {
+            System.err.println("Database configuration error: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        } catch (Exception e) {
+            System.err.println("Unexpected error: " + e.getMessage());
             e.printStackTrace();
             return false;
         }

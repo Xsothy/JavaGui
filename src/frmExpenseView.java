@@ -2,18 +2,13 @@ import Controller.ExpenseController;
 import Model.Expense;
 import Model.Staff;
 import Support.DB;
-import Support.Response;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -24,11 +19,12 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
 import java.io.File;
 import java.util.List;
+import java.math.BigDecimal;
+import java.util.Optional;
 
 public class frmExpenseView extends javax.swing.JPanel {
     private final ExpenseController expenseController;
     private frmExpenseAdd expenseForm = null;
-    private static final String IMAGE_FOLDER = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
 
     public frmExpenseView() {
         expenseController = new ExpenseController();
@@ -249,24 +245,28 @@ public class frmExpenseView extends javax.swing.JPanel {
         DefaultTableModel model = (DefaultTableModel) tblExpense.getModel();
         model.setRowCount(0);
 
-        Response<List<Expense>> res = expenseController.getAllExpenses();
-        if (!res.isSuccess()) {
-            JOptionPane.showMessageDialog(this, "Failed to get expense: " + res.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        res.getData().forEach(expense -> {
-            model.addRow(new Object[]{
-                    expense.getId(),
-                    expense.getName(),
-                    expense.getAmount(),
-                    expense.getStaffId(),
-                    getImageIcon("src/img/edit.png"),
-                    getImageIcon("src/img/delete.png")
+        List<Expense> expenses;
+        try {
+            expenses = expenseController.getAllExpenses();
+            
+            expenses.forEach(expense -> {
+                model.addRow(new Object[]{
+                        expense.getId(),
+                        expense.getName(),
+                        expense.getDescription(),
+                        expense.getAmount(),
+                        expense.getStaffId(),
+                        getImageIcon(expense.getPicture()),
+                        getImageIcon("src/img/edit.png"),
+                        getImageIcon("src/img/delete.png")
+                });
             });
-        });
-        tblExpense.revalidate();
-        tblExpense.repaint();
+            
+            tblExpense.revalidate();
+            tblExpense.repaint();
+        } catch (SQLException e) {
+            showError("Failed to get expenses: " + e.getMessage());
+        }
     }
 
     public static ImageIcon getImageIcon(String imageName) {
@@ -283,108 +283,101 @@ public class frmExpenseView extends javax.swing.JPanel {
      }
 
       private void editExpense(int row) {
-         if (expenseForm != null && expenseForm.isVisible()) {
-             return;
-         }
-         int id = (int) tblExpense.getValueAt(row, 0);
-         String date = (String) tblExpense.getValueAt(row, 1);
-         String description = (String) tblExpense.getValueAt(row, 2);
-         double amount = (double) tblExpense.getValueAt(row, 3);
-         String staffName = (String) tblExpense.getValueAt(row, 4);
-         String imageName = (String) tblExpense.getValueAt(row, 8);
-         String fullImagePath = (imageName != null) ? IMAGE_FOLDER + imageName : null;
+        try {
+            if (expenseForm != null && expenseForm.isVisible()) {
+                return;
+            }
+            int id = (int) tblExpense.getValueAt(row, 0);
+            
+            // Get the expense from the controller
+            Optional<Expense> expenseOpt = expenseController.getExpenseById(id);
+            if (expenseOpt.isEmpty()) {
+                showError("Expense not found");
+                return;
+            }
+            
+            Expense expense = expenseOpt.get();
+            String name = expense.getName();
+            String description = expense.getDescription();
+            BigDecimal amount = expense.getAmount();
+            int staffId = expense.getStaffId();
+            String picture = expense.getPicture();
+            
+            expenseForm = new frmExpenseAdd(this, id, name, description, amount.doubleValue(), String.valueOf(staffId), picture);
+            btnAdd.setEnabled(false);
 
-         expenseForm = new frmExpenseAdd(this, id, date, description, amount, staffName, fullImagePath);
-         btnAdd.setEnabled(false);
-
-         expenseForm.addWindowListener(new WindowAdapter() {
-             @Override
-             public void windowClosed(WindowEvent e) {
-                 btnAdd.setEnabled(true);
-                 renderExpenseTable();
-                 expenseForm = null;
-             }
-         });
-         expenseForm.setVisible(true);
-     }
+            expenseForm.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    btnAdd.setEnabled(true);
+                    renderExpenseTable();
+                    expenseForm = null;
+                }
+            });
+            
+            expenseForm.setVisible(true);
+        } catch (IllegalArgumentException e) {
+            showError("Error editing expense: " + e.getMessage());
+        } catch (SQLException e) {
+            showError("Database error: " + e.getMessage());
+        }
+    }
     private void showError(String message) {
         JOptionPane.showMessageDialog(null, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
   
     private void deleteExpense(int row) {
+        try {
             int id = (int) tblExpense.getValueAt(row, 0);
             int confirm = JOptionPane.showConfirmDialog(null, "Are you sure you want to delete this expense?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
-                expenseController.deleteExpense(id);
+                boolean deleted = expenseController.deleteExpense(id);
+                if (deleted) {
+                    JOptionPane.showMessageDialog(null, "Expense deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    renderExpenseTable();
+                }
             }
-            renderExpenseTable();
+        } catch (IllegalArgumentException e) {
+            showError("Error deleting expense: " + e.getMessage());
+        } catch (SQLException e) {
+            showError("Database error: " + e.getMessage());
         }
+    }
     public void searchExpense(String keyword) {
-//        DefaultTableModel model = (DefaultTableModel) tblExpense.getModel();
-//        model.setRowCount(0);
-//
-//        String imageFolder = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
-//        Connection con = null;
-//        PreparedStatement pstmt = null;
-//        ResultSet rs = null;
-//
-//        try {
-//            con = DB.getInstance().getConnection().getData();
-//            if (con == null) {
-//                throw new SQLException("Database connection failed.");
-//            }
-//
-//            String  sql = "SELECT e.ID, e.date, e.desc, e.amount, e.picture, s.name AS staff_name " +
-//                      "FROM expenses e " +
-//                      "JOIN staff s ON e.SId = s.ID " +
-//                      "WHERE e.desc LIKE ? OR s.name LIKE ? " +
-//                      "ORDER BY e.ID ASC";
-//                pstmt = con.prepareStatement(sql);
-//                pstmt.setString(1, "%" + keyword + "%");
-//                pstmt.setString(2, "%" + keyword + "%");
-//
-//            rs = pstmt.executeQuery();
-//            while (rs.next()) {
-//                String imageName = rs.getString("picture");
-//                ImageIcon imageIcon = null;
-//
-//                if (imageName != null && !imageName.isEmpty()) {
-//                    String fullImagePath = imageFolder + imageName;
-//                    File imageFile = new File(fullImagePath);
-//                    if (imageFile.exists()) {
-//                        imageIcon = new ImageIcon(fullImagePath);
-//                        Image img = imageIcon.getImage();
-//                        Image scaledImg = img.getScaledInstance(40, 40, Image.SCALE_SMOOTH);
-//                        imageIcon = new ImageIcon(scaledImg);
-//                    } else {
-//                        System.out.println("Image file not found: " + fullImagePath);
-//                    }
-//                }
-//
-//                model.addRow(new Object[]{
-//                    rs.getInt("ID"),
-//                    rs.getString("date"),
-//                    rs.getString("desc"),
-//                    rs.getDouble("amount"),
-//                    rs.getString("staff_name"),
-//                    imageIcon,
-//                    new ImageIcon("D:\\Y3S2\\javaII\\Testing_Java\\src\\img\\edit.png"),
-//                    new ImageIcon("D:\\Y3S2\\javaII\\Testing_Java\\src\\img\\delete.png"),
-//                    imageName
-//                });
-//            }
-//
-//        } catch (SQLException e) {
-//            JOptionPane.showMessageDialog(null, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//        } finally {
-//            try {
-//                if (rs != null) rs.close();
-//                if (pstmt != null) pstmt.close();
-//                if (con != null) con.close();
-//            } catch (SQLException e) {
-//                JOptionPane.showMessageDialog(null, "Error closing resources: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//            }
-//        }
+        if (keyword == null || keyword.trim().isEmpty()) {
+            renderExpenseTable(); // If search is empty, show all expenses
+            return;
+        }
+        
+        DefaultTableModel model = (DefaultTableModel) tblExpense.getModel();
+        model.setRowCount(0);
+
+        try {
+            List<Expense> expenses = expenseController.getAllExpenses();
+            
+            // Filter expenses based on keyword (case-insensitive)
+            expenses.stream()
+                .filter(expense -> 
+                    expense.getName().toLowerCase().contains(keyword.toLowerCase()) || 
+                    expense.getDescription().toLowerCase().contains(keyword.toLowerCase()))
+                .forEach(expense -> {
+                    model.addRow(new Object[]{
+                        expense.getId(),
+                        expense.getName(),
+                        expense.getDescription(),
+                        expense.getAmount(),
+                        expense.getStaffId(),
+                        getImageIcon(expense.getPicture()),
+                        getImageIcon("src/img/edit.png"),
+                        getImageIcon("src/img/delete.png")
+                    });
+                });
+            
+            tblExpense.revalidate();
+            tblExpense.repaint();
+        } catch (SQLException e) {
+            showError("Database error: " + e.getMessage());
+        }
     }
 
 
@@ -396,7 +389,8 @@ public class frmExpenseView extends javax.swing.JPanel {
         newForm.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                btnAdd.setEnabled(true);            
+                btnAdd.setEnabled(true);
+                renderExpenseTable(); // Refresh the table when the form is closed
             }
         });
     }

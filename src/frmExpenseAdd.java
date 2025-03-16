@@ -1,3 +1,7 @@
+import Controller.ExpenseController;
+import Controller.StaffController;
+import Model.Expense;
+import Model.Staff;
 import Support.DB;
 
 import java.awt.Color;
@@ -6,6 +10,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
@@ -13,6 +18,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,15 +31,19 @@ import javax.swing.filechooser.FileNameExtensionFilter;
  * @author Admin
  */
 public class frmExpenseAdd extends javax.swing.JFrame {
-      private int expenseId;
+    private int expenseId;
     private String expenseDate;
     private String expenseDescription;
     private double expenseAmount;
     private String staffId;
     private String imagePath;
     private frmExpenseView parentForm;
+    private final ExpenseController expenseController;
+    private final StaffController staffController;
 
     public frmExpenseAdd(frmExpenseView parent, int id, String date, String description, double amount, String sId, String imagePath) {
+        this.expenseController = new ExpenseController();
+        this.staffController = new StaffController();
         initComponents();
         this.parentForm = parent;
         this.expenseId = id;
@@ -51,6 +62,7 @@ public class frmExpenseAdd extends javax.swing.JFrame {
         // Load and resize image with fixed size (200x200)
         loadExpenseImage();
     }
+
     private void loadExpenseImage() {
         if (imagePath != null && !imagePath.isEmpty()) {
             File file = new File(imagePath);
@@ -85,6 +97,8 @@ public class frmExpenseAdd extends javax.swing.JFrame {
     }
 
     public frmExpenseAdd() {
+        this.expenseController = new ExpenseController();
+        this.staffController = new StaffController();
         initComponents();
         populateStaffComboBox();
         clickEnter();
@@ -94,23 +108,19 @@ public class frmExpenseAdd extends javax.swing.JFrame {
     }
 
     private void populateStaffComboBox() {
-//        try {
-//            Connection con = DB.getInstance().getConnection().getData();
-//            Statement stmt = con.createStatement();
-//            ResultSet rs = stmt.executeQuery("SELECT name FROM staff");
-//            cbStaffID.removeAllItems();
-//            while (rs.next()) {
-//                String staffName = rs.getString("name");
-//                cbStaffID.addItem(staffName);
-//            }
-//
-//            rs.close();
-//            stmt.close();
-//            con.close();
-//        } catch (SQLException e) {
-//            JOptionPane.showMessageDialog(this, "Error loading staff data: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//        }
+        try {
+            List<Staff> staffList = staffController.getAllStaff();
+            cbStaffID.removeAllItems();
+            
+            for (Staff staff : staffList) {
+                cbStaffID.addItem(staff.getUserName());
+            }
+        } catch (SQLException ex) {
+            Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "Error loading staff data", ex);
+            showMessage("Error loading staff data: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
+
     private void clickEnter(){
         txtDate.addKeyListener(new KeyAdapter() {
             @Override
@@ -382,13 +392,11 @@ public class frmExpenseAdd extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCloseActionPerformed
     private String selectedImagePath = "";
     private void btnSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSaveActionPerformed
-          try {
-
+        try {
             String createdAt = txtDate.getText().trim();
             String descText = txtDesc.getText().trim();
             String amountText = txtAmount.getText().trim();
             String staffName = cbStaffID.getSelectedItem() != null ? cbStaffID.getSelectedItem().toString().trim() : "";
-
 
             if (createdAt.isEmpty() || descText.isEmpty() || amountText.isEmpty() || staffName.isEmpty()) {
                 showMessage("Please fill all fields.", "Input Error", JOptionPane.ERROR_MESSAGE);
@@ -403,33 +411,66 @@ public class frmExpenseAdd extends javax.swing.JFrame {
                 return;
             }
 
-            int staffId = getStaffIdByName(staffName);
-            if (staffId == 0) {
-                showMessage("Staff not found.", "Error", JOptionPane.ERROR_MESSAGE);
+            // Get staff by username
+            Optional<Staff> staffOpt;
+            try {
+                staffOpt = staffController.getStaffByUserName(staffName);
+                if (staffOpt.isEmpty()) {
+                    showMessage("Staff not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } catch (SQLException ex) {
+                Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "Error retrieving staff", ex);
+                showMessage("Error retrieving staff: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            if (expenseId == 0) {
-                saveExpenseToDatabase(staffId, amount, createdAt, descText, selectedImagePath);
-                JOptionPane.showMessageDialog(this, "Expense added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
+            int staffId = staffOpt.get().getId();
+            String finalImagePath = selectedImagePath.isEmpty() ? this.imagePath : selectedImagePath;
+            
+            try {
+                if (expenseId == 0) {
+                    // Create new expense with image handling
+                    Expense newExpense = expenseController.createExpense(
+                            createdAt, 
+                            descText, 
+                            BigDecimal.valueOf(amount), 
+                            finalImagePath, 
+                            staffId);
+                    
+                    JOptionPane.showMessageDialog(this, "Expense added successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    // Update existing expense with image handling
+                    Expense expense = new Expense(
+                            expenseId, 
+                            createdAt, 
+                            descText, 
+                            BigDecimal.valueOf(amount), 
+                            "", // Empty picture as we'll handle it separately
+                            staffId);
+                    
+                    boolean updated = expenseController.updateExpense(expense, finalImagePath);
+                    if (updated) {
+                        JOptionPane.showMessageDialog(this, "Expense updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    } else {
+                        showMessage("Failed to update expense.", "Error", JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                }
+                
                 if (parentForm != null) {
                     parentForm.renderExpenseTable();
                 }
-                dispose(); 
-                resetForm();
-            } else {
-                updateExpenseInDatabase(expenseId, staffId, amount, createdAt, descText, selectedImagePath);
-                JOptionPane.showMessageDialog(this, "Expense updated successfully!", "Success", JOptionPane.INFORMATION_MESSAGE);
-
-                if (parentForm != null) {
-                    parentForm.renderExpenseTable();
-                    this.dispose();
-                }
+                dispose();
+            } catch (IllegalArgumentException ex) {
+                showMessage("Invalid input: " + ex.getMessage(), "Input Error", JOptionPane.ERROR_MESSAGE);
+            } catch (SQLException ex) {
+                Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "Database error", ex);
+                showMessage("Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            } catch (IOException ex) {
+                Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "File error", ex);
+                showMessage("Error handling image file: " + ex.getMessage(), "File Error", JOptionPane.ERROR_MESSAGE);
             }
-        } catch (SQLException ex) {
-            Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "Database error", ex);
-            showMessage("Error occurred while saving the expense. Please try again.", "Database Error", JOptionPane.ERROR_MESSAGE);
         } catch (Exception ex) {
             Logger.getLogger(frmExpenseAdd.class.getName()).log(Level.SEVERE, "Unexpected error", ex);
             showMessage("An unexpected error occurred: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -462,120 +503,6 @@ public class frmExpenseAdd extends javax.swing.JFrame {
             lblImage.setIcon(new ImageIcon(scaledImage));
         }
     }//GEN-LAST:event_btnImageActionPerformed
-    private void saveExpenseToDatabase(int staffId, double amount, String createdAt, String descText, String selectedImagePath) throws SQLException, IOException {
-        //FIXME: fix
-        //        String uploadDir = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
-//        String imageName = null;
-//
-//        File directory = new File(uploadDir);
-//        if (!directory.exists()) {
-//            directory.mkdirs(); 
-//        }
-//
-//        if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-//            File sourceFile = new File(selectedImagePath);
-//            if (sourceFile.exists()) {  
-//                String extension = selectedImagePath.substring(selectedImagePath.lastIndexOf("."));
-//                imageName = UUID.randomUUID().toString() + extension;
-//                File destinationFile = new File(uploadDir + imageName);
-//
-//                Files.copy(sourceFile.toPath(), destinationFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-//            } else {
-//                System.out.println("Error: Selected image file does not exist!");
-//            }
-//        }
-//
-//        String query = "INSERT INTO expense (date, `desc`, amount, picture, sid) VALUES (?, ?, ?, ?, ?)";
-//        try (Connection con = DB.getInstance().getConnection().getData();
-//             PreparedStatement stmt = con.prepareStatement(query)) {
-//
-//            stmt.setString(1, createdAt);
-//            stmt.setString(2, descText);
-//            stmt.setDouble(3, amount);
-//
-//            if (imageName != null) {
-//                stmt.setString(4, imageName); 
-//            } else {
-//                stmt.setNull(4, java.sql.Types.VARCHAR);
-//            }
-//
-//            stmt.setInt(5, staffId);
-//
-//            int rowsInserted = stmt.executeUpdate();
-//            if (rowsInserted == 0) {
-//                throw new SQLException("Failed to insert the expense.");
-//            }
-//        }
-    }
-
-    private void updateExpenseInDatabase(int expenseId, int staffId, double amount, String createdAt, String descText, String selectedImagePath) throws SQLException {
-//      String targetFolder = "D:/Y3S2/javaII/Testing_Java/src/Expenses/";
-//      String imageFileName = null;
-//
-//      if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
-//          File sourceFile = new File(selectedImagePath);
-//          imageFileName = sourceFile.getName();
-//          File targetFile = new File(targetFolder + imageFileName);
-//
-//          try {
-//              Files.copy(sourceFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-//          } catch (IOException e) {
-//              throw new SQLException("Error saving image: " + e.getMessage());
-//          }
-//      } else {
-//          String query = "SELECT picture FROM expense WHERE id = ?";
-//          try (Connection con = DB.getInstance().getConnection().getData();
-//               PreparedStatement stmt = con.prepareStatement(query)) {
-//              stmt.setInt(1, expenseId);
-//              try (ResultSet rs = stmt.executeQuery()) {
-//                  if (rs.next()) {
-//                      imageFileName = rs.getString("picture");
-//                  }
-//              }
-//          } catch (SQLException e) {
-//              throw new SQLException("Error retrieving current image: " + e.getMessage());
-//          }
-//      }
-//
-//      String updateQuery = "UPDATE expense SET date = ?, `desc` = ?, amount = ?, picture = ?, sid = ? WHERE id = ?";
-//      try (Connection con = DB.getInstance().getConnection().getData();
-//           PreparedStatement stmt = con.prepareStatement(updateQuery)) {
-//          stmt.setString(1, createdAt);
-//          stmt.setString(2, descText);
-//          stmt.setDouble(3, amount);
-//
-//          if (imageFileName != null) {
-//              stmt.setString(4, imageFileName);
-//          } else {
-//              stmt.setNull(4, java.sql.Types.VARCHAR);
-//          }
-//
-//          stmt.setInt(5, staffId);
-//          stmt.setInt(6, expenseId);
-//
-//          int rowsUpdated = stmt.executeUpdate();
-//          if (rowsUpdated == 0) {
-//              throw new SQLException("No rows updated, please check the expense ID.");
-//          }
-//      }
-  }
-
-    private int getStaffIdByName(String staffName) throws SQLException {
-        String query = "SELECT id FROM staff WHERE name = ?";
-        try (Connection con = (Connection) DB.getInstance().getConnection().getData();
-             PreparedStatement stmt = con.prepareStatement(query)) {
-
-            stmt.setString(1, staffName);
-            ResultSet rs = stmt.executeQuery();
-
-            if (rs.next()) {
-                int staffId = rs.getInt("id");
-                return staffId;
-            } else {
-                return 0;
-            }
-        }
-    }
 
     private void resetForm() {
         txtAmount.setText("");
