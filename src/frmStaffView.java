@@ -17,6 +17,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.awt.Container;
 
 
 /*
@@ -81,6 +82,9 @@ public class frmStaffView extends javax.swing.JPanel {
                         if (confirm == JOptionPane.YES_OPTION) {
                             deleteStaff(staffId);
                         }
+                    } else if (column == 6) { // View details icon clicked
+                        int staffId = (int) tblStaff.getValueAt(row, 0);
+                        viewStaffDetails(staffId);
                     }
                 }
             }
@@ -134,6 +138,7 @@ public class frmStaffView extends javax.swing.JPanel {
         tblStaff.getColumnModel().getColumn(3).setPreferredWidth(200);
         tblStaff.getColumnModel().getColumn(4).setPreferredWidth(80);  
         tblStaff.getColumnModel().getColumn(5).setPreferredWidth(80);
+        tblStaff.getColumnModel().getColumn(6).setPreferredWidth(80);
 
         tblStaff.revalidate();
         tblStaff.repaint();
@@ -189,7 +194,7 @@ public class frmStaffView extends javax.swing.JPanel {
             new Object [][] {
             },
             new String [] {
-                "ID", "Name", "Position","Username","","",
+                "ID", "Name", "Position","Username","","","",
             }
         ));
         tblStaff.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -262,6 +267,7 @@ public class frmStaffView extends javax.swing.JPanel {
                     staff.getUserName(),
                     frmExpenseView.getImageIcon("src/img/edit.png"),
                     frmExpenseView.getImageIcon("src/img/delete.png"),
+                    frmExpenseView.getImageIcon("src/img/view.png")
             });
         });
         tblStaff.revalidate();
@@ -372,6 +378,51 @@ public class frmStaffView extends javax.swing.JPanel {
         } catch (SQLException ex) {
             Logger.getLogger(frmStaffView.class.getName()).log(Level.SEVERE, "Database error", ex);
             JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Opens the staff details view for the specified staff ID.
+     * 
+     * @param staffId The ID of the staff member to view
+     */
+    private void viewStaffDetails(int staffId) {
+        try {
+            // Check if the staff exists
+            staffController.getStaffById(staffId)
+                .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
+            
+            // Create and show the staff details view
+            frmStaffDetailsView detailsView = new frmStaffDetailsView(staffId);
+            
+            // Get the parent container
+            Container parent = getParent();
+            
+            // If the parent is using the Router, register and navigate to the details view
+            if (parent instanceof JPanel) {
+                Support.Router router = Support.Router.getInstance((JPanel) parent);
+                String detailsPath = "/staff/" + staffId;
+                
+                if (!router.hasRoute(detailsPath)) {
+                    router.register(detailsPath, detailsView);
+                }
+                
+                router.navigate(detailsPath);
+            }
+            // Otherwise, just add the details view to the parent
+            else {
+                parent.removeAll();
+                parent.add(detailsView);
+                parent.revalidate();
+                parent.repaint();
+            }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, "Error viewing staff details: " + ex.getMessage(), 
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException ex) {
+            Logger.getLogger(frmStaffView.class.getName()).log(Level.SEVERE, "Database error", ex);
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), 
+                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

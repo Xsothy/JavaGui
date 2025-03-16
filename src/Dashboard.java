@@ -1,18 +1,32 @@
+import Components.ExpensePanel;
+import Components.StaffPanel;
 import java.awt.Color;
 import javax.swing.*;
-
-
+import Support.Router;
 
 public class Dashboard extends javax.swing.JFrame {
+    private Router router;
+    
     public Dashboard() {
         initComponents();
-        controlPanel(new frmStaffView());
+        
+        // Initialize the router
+        router = Router.getInstance(MainPanel);
+        
+        // Register routes
+        router.register("/staff", new StaffPanel(MainPanel));
+        router.register("/expenses", new ExpensePanel(MainPanel));
+        
+        // Navigate to the default route
+        router.navigate("/staff");
+        
+        // Apply button styles
         applyButtonStyles(btnExpense);
         applyButtonStyles(btnStaff);
         applyButtonStyles(btnLogout);
     }
      
-     private void applyButtonStyles(JButton button) {
+    private void applyButtonStyles(JButton button) {
         button.setOpaque(true);
         button.setBorderPainted(false);
         addHoverEffect(button);  
@@ -171,13 +185,11 @@ public class Dashboard extends javax.swing.JFrame {
     }
 
     private void btnExpenseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExpenseActionPerformed
-        // TODO add your handling code here:
-        controlPanel(new frmExpenseView());
+        router.navigate("/expenses");
     }//GEN-LAST:event_btnExpenseActionPerformed
 
     private void btnStaffActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStaffActionPerformed
-        // TODO add your handling code here:
-        controlPanel(new frmStaffView());
+        router.navigate("/staff");
     }//GEN-LAST:event_btnStaffActionPerformed
 
     private void btnLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogoutActionPerformed

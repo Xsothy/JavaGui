@@ -238,4 +238,29 @@ public class StaffController {
         
         // Login successful, no exception thrown
     }
+
+    /**
+     * Gets a staff member by ID with their related expenses.
+     * 
+     * @param id The ID of the staff member
+     * @return An Optional containing the staff member with expenses if found, or empty if not found
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<StaffRepository.StaffWithExpenses> getStaffWithExpensesById(int id) throws IllegalArgumentException, SQLException {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Invalid staff ID");
+        }
+        return staffRepository.getStaffWithExpensesById(id);
+    }
+
+    /**
+     * Gets all staff members with their related expenses.
+     * 
+     * @return A list of staff members with expenses
+     * @throws SQLException If a database error occurs
+     */
+    public List<StaffRepository.StaffWithExpenses> getAllStaffWithExpenses() throws SQLException {
+        return staffRepository.getAllStaffWithExpenses();
+    }
 }

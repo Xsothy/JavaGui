@@ -1,6 +1,7 @@
 import Controller.ExpenseController;
 import Model.Expense;
 import Model.Staff;
+import Repository.ExpenseRepository;
 import Support.DB;
 
 import java.awt.*;
@@ -245,17 +246,17 @@ public class frmExpenseView extends javax.swing.JPanel {
         DefaultTableModel model = (DefaultTableModel) tblExpense.getModel();
         model.setRowCount(0);
 
-        List<Expense> expenses;
         try {
-            expenses = expenseController.getAllExpenses();
+            List<ExpenseRepository.ExpenseWithStaff> expensesWithStaff = expenseController.getAllExpensesWithStaff();
             
-            expenses.forEach(expense -> {
+            expensesWithStaff.forEach(expenseWithStaff -> {
+                Expense expense = expenseWithStaff.getExpense();
                 model.addRow(new Object[]{
                         expense.getId(),
                         expense.getName(),
                         expense.getDescription(),
                         expense.getAmount(),
-                        expense.getStaffId(),
+                        expenseWithStaff.getStaffName(), // Display staff name instead of ID
                         getImageIcon(expense.getPicture()),
                         getImageIcon("src/img/edit.png"),
                         getImageIcon("src/img/delete.png")

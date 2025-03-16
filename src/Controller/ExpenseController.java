@@ -236,4 +236,29 @@ public class ExpenseController {
         }
         return true;
     }
+
+    /**
+     * Gets an expense by ID with its related staff information.
+     * 
+     * @param id The ID of the expense
+     * @return An Optional containing the expense with staff information if found, or empty if not found
+     * @throws IllegalArgumentException If the input is invalid
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<ExpenseRepository.ExpenseWithStaff> getExpenseWithStaffById(int id) throws IllegalArgumentException, SQLException {
+        if (id <= 0) {
+            throw new IllegalArgumentException("Invalid expense ID");
+        }
+        return expenseRepository.getExpenseWithStaffById(id);
+    }
+
+    /**
+     * Gets all expenses with their related staff information.
+     * 
+     * @return A list of expenses with staff information
+     * @throws SQLException If a database error occurs
+     */
+    public List<ExpenseRepository.ExpenseWithStaff> getAllExpensesWithStaff() throws SQLException {
+        return expenseRepository.getAllExpensesWithStaff();
+    }
 }

@@ -263,17 +263,178 @@ public class StaffRepository {
     }
 
     /**
-     * Count the number of staff members.
+     * Get the count of all staff members.
      * 
-     * @return The number of staff members
+     * @return The count of staff members
      * @throws SQLException If a database error occurs
      */
     public int countStaff() throws SQLException {
         return db.execute(connection -> {
             Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM staff");
-            rs.next();
-            return rs.getInt(1);
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) as count FROM staff");
+            
+            if (rs.next()) {
+                return rs.getInt("count");
+            }
+            
+            return 0;
         });
+    }
+
+    /**
+     * Get a staff member by ID with their related expenses.
+     * 
+     * @param staffId The ID of the staff member
+     * @return An Optional containing the staff member with expenses if found, or empty if not found
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<StaffWithExpenses> getStaffWithExpensesById(int staffId) throws SQLException {
+        return db.execute(connection -> {
+            // First, get the staff member
+            PreparedStatement staffStmt = connection.prepareStatement(
+                    "SELECT id, name, position, username, password, role FROM staff WHERE id = ?"
+            );
+            staffStmt.setInt(1, staffId);
+            ResultSet staffRs = staffStmt.executeQuery();
+
+            if (!staffRs.next()) {
+                return Optional.empty();
+            }
+
+            Staff staff = new Staff(
+                    staffRs.getInt("id"),
+                    staffRs.getString("name"),
+                    staffRs.getString("position"),
+                    staffRs.getString("username"),
+                    staffRs.getString("password"),
+                    staffRs.getString("role")
+            );
+            
+            // Then, get all expenses for this staff member
+            PreparedStatement expensesStmt = connection.prepareStatement(
+                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ? ORDER BY id DESC"
+            );
+            expensesStmt.setInt(1, staffId);
+            ResultSet expensesRs = expensesStmt.executeQuery();
+            
+            List<ExpenseRepository.ExpenseWithStaff> expenses = new ArrayList<>();
+            
+            while (expensesRs.next()) {
+                Model.Expense expense = new Model.Expense(
+                        expensesRs.getInt("id"),
+                        expensesRs.getString("name"),
+                        expensesRs.getString("description"),
+                        expensesRs.getBigDecimal("amount"),
+                        expensesRs.getString("picture"),
+                        expensesRs.getInt("staff_id")
+                );
+                
+                ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
+                        expense,
+                        staff.getName(),
+                        staff.getPosition(),
+                        staff.getUserName(),
+                        staff.getRole()
+                );
+                
+                expenses.add(expenseWithStaff);
+            }
+            
+            return Optional.of(new StaffWithExpenses(staff, expenses));
+        });
+    }
+    
+    /**
+     * Get all staff members with their related expenses.
+     * 
+     * @return A list of staff members with their expenses
+     * @throws SQLException If a database error occurs
+     */
+    public List<StaffWithExpenses> getAllStaffWithExpenses() throws SQLException {
+        return db.execute(connection -> {
+            // First, get all staff members
+            Statement staffStmt = connection.createStatement();
+            ResultSet staffRs = staffStmt.executeQuery(
+                    "SELECT id, name, position, username, password, role FROM staff ORDER BY id"
+            );
+            
+            List<StaffWithExpenses> staffWithExpensesList = new ArrayList<>();
+            
+            while (staffRs.next()) {
+                Staff staff = new Staff(
+                        staffRs.getInt("id"),
+                        staffRs.getString("name"),
+                        staffRs.getString("position"),
+                        staffRs.getString("username"),
+                        staffRs.getString("password"),
+                        staffRs.getString("role")
+                );
+                
+                // Then, get all expenses for this staff member
+                PreparedStatement expensesStmt = connection.prepareStatement(
+                        "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ? ORDER BY id DESC"
+                );
+                expensesStmt.setInt(1, staff.getId());
+                ResultSet expensesRs = expensesStmt.executeQuery();
+                
+                List<ExpenseRepository.ExpenseWithStaff> expenses = new ArrayList<>();
+                
+                while (expensesRs.next()) {
+                    Model.Expense expense = new Model.Expense(
+                            expensesRs.getInt("id"),
+                            expensesRs.getString("name"),
+                            expensesRs.getString("description"),
+                            expensesRs.getBigDecimal("amount"),
+                            expensesRs.getString("picture"),
+                            expensesRs.getInt("staff_id")
+                    );
+                    
+                    ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
+                            expense,
+                            staff.getName(),
+                            staff.getPosition(),
+                            staff.getUserName(),
+                            staff.getRole()
+                    );
+                    
+                    expenses.add(expenseWithStaff);
+                }
+                
+                staffWithExpensesList.add(new StaffWithExpenses(staff, expenses));
+            }
+            
+            return staffWithExpensesList;
+        });
+    }
+    
+    /**
+     * Class to hold a staff member with their related expenses.
+     */
+    public static class StaffWithExpenses {
+        private final Staff staff;
+        private final List<ExpenseRepository.ExpenseWithStaff> expenses;
+        
+        public StaffWithExpenses(Staff staff, List<ExpenseRepository.ExpenseWithStaff> expenses) {
+            this.staff = staff;
+            this.expenses = expenses;
+        }
+        
+        public Staff getStaff() {
+            return staff;
+        }
+        
+        public List<ExpenseRepository.ExpenseWithStaff> getExpenses() {
+            return expenses;
+        }
+        
+        public int getExpenseCount() {
+            return expenses.size();
+        }
+        
+        public java.math.BigDecimal getTotalExpenseAmount() {
+            return expenses.stream()
+                    .map(e -> e.getExpense().getAmount())
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+        }
     }
 }

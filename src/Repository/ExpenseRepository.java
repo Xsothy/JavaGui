@@ -192,17 +192,148 @@ public class ExpenseRepository {
     }
 
     /**
-     * Count the number of expenses.
+     * Get the count of all expenses.
      * 
-     * @return The number of expenses
+     * @return The count of expenses
      * @throws SQLException If a database error occurs
      */
     public int countExpenses() throws SQLException {
         return db.execute(connection -> {
             Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM expenses");
-            rs.next();
-            return rs.getInt(1);
+            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) as count FROM expenses");
+            
+            if (rs.next()) {
+                return rs.getInt("count");
+            }
+            
+            return 0;
         });
+    }
+
+    /**
+     * Get an expense by ID with its related staff information.
+     * 
+     * @param expenseId The ID of the expense
+     * @return A map containing the expense and its related staff information
+     * @throws SQLException If a database error occurs
+     */
+    public Optional<ExpenseWithStaff> getExpenseWithStaffById(int expenseId) throws SQLException {
+        return db.execute(connection -> {
+            PreparedStatement stmt = connection.prepareStatement(
+                    "SELECT e.id, e.name, e.description, e.amount, e.picture, e.staff_id, " +
+                    "s.name as staff_name, s.position as staff_position, s.username as staff_username, s.role as staff_role " +
+                    "FROM expenses e " +
+                    "JOIN staff s ON e.staff_id = s.id " +
+                    "WHERE e.id = ?"
+            );
+            stmt.setInt(1, expenseId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (!rs.next()) {
+                return Optional.empty();
+            }
+
+            Expense expense = new Expense(
+                rs.getInt("id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getBigDecimal("amount"),
+                rs.getString("picture"),
+                rs.getInt("staff_id")
+            );
+            
+            ExpenseWithStaff expenseWithStaff = new ExpenseWithStaff(
+                expense,
+                rs.getString("staff_name"),
+                rs.getString("staff_position"),
+                rs.getString("staff_username"),
+                rs.getString("staff_role")
+            );
+            
+            return Optional.of(expenseWithStaff);
+        });
+    }
+    
+    /**
+     * Get all expenses with their related staff information.
+     * 
+     * @return A list of maps containing expenses and their related staff information
+     * @throws SQLException If a database error occurs
+     */
+    public List<ExpenseWithStaff> getAllExpensesWithStaff() throws SQLException {
+        return db.execute(connection -> {
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(
+                "SELECT e.id, e.name, e.description, e.amount, e.picture, e.staff_id, " +
+                "s.name as staff_name, s.position as staff_position, s.username as staff_username, s.role as staff_role " +
+                "FROM expenses e " +
+                "JOIN staff s ON e.staff_id = s.id " +
+                "ORDER BY e.id DESC"
+            );
+            
+            List<ExpenseWithStaff> expenses = new ArrayList<>();
+            
+            while (rs.next()) {
+                Expense expense = new Expense(
+                    rs.getInt("id"),
+                    rs.getString("name"),
+                    rs.getString("description"),
+                    rs.getBigDecimal("amount"),
+                    rs.getString("picture"),
+                    rs.getInt("staff_id")
+                );
+                
+                ExpenseWithStaff expenseWithStaff = new ExpenseWithStaff(
+                    expense,
+                    rs.getString("staff_name"),
+                    rs.getString("staff_position"),
+                    rs.getString("staff_username"),
+                    rs.getString("staff_role")
+                );
+                
+                expenses.add(expenseWithStaff);
+            }
+            
+            return expenses;
+        });
+    }
+    
+    /**
+     * Class to hold an expense with its related staff information.
+     */
+    public static class ExpenseWithStaff {
+        private final Expense expense;
+        private final String staffName;
+        private final String staffPosition;
+        private final String staffUsername;
+        private final String staffRole;
+        
+        public ExpenseWithStaff(Expense expense, String staffName, String staffPosition, String staffUsername, String staffRole) {
+            this.expense = expense;
+            this.staffName = staffName;
+            this.staffPosition = staffPosition;
+            this.staffUsername = staffUsername;
+            this.staffRole = staffRole;
+        }
+        
+        public Expense getExpense() {
+            return expense;
+        }
+        
+        public String getStaffName() {
+            return staffName;
+        }
+        
+        public String getStaffPosition() {
+            return staffPosition;
+        }
+        
+        public String getStaffUsername() {
+            return staffUsername;
+        }
+        
+        public String getStaffRole() {
+            return staffRole;
+        }
     }
 }
