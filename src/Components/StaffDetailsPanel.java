@@ -1,6 +1,7 @@
 package Components;
 
 import Controller.StaffController;
+import Model.ExpenseWithStaff;
 import Model.Staff;
 import Repository.StaffRepository;
 import Support.Router;
@@ -284,7 +285,7 @@ public class StaffDetailsPanel extends JPanel {
         
         // Add the expenses to the table
         for (int i = 0; i < staffWithExpenses.getExpenses().size(); i++) {
-            Repository.ExpenseRepository.ExpenseWithStaff expense = staffWithExpenses.getExpenses().get(i);
+            ExpenseWithStaff expense = staffWithExpenses.getExpenses().get(i);
             data[i][0] = expense.getExpense().getId();
             data[i][1] = expense.getExpense().getName();
             data[i][2] = expense.getExpense().getDescription();

@@ -1,5 +1,6 @@
 package Repository;
 
+import Model.ExpenseWithStaff;
 import Model.Staff;
 import Support.DB;
 import java.sql.PreparedStatement;
@@ -317,7 +318,7 @@ public class StaffRepository {
             expensesStmt.setInt(1, staffId);
             ResultSet expensesRs = expensesStmt.executeQuery();
             
-            List<ExpenseRepository.ExpenseWithStaff> expenses = new ArrayList<>();
+            List<ExpenseWithStaff> expenses = new ArrayList<>();
             
             while (expensesRs.next()) {
                 Model.Expense expense = new Model.Expense(
@@ -329,9 +330,9 @@ public class StaffRepository {
                         expensesRs.getInt("staff_id")
                 );
                 
-                ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
+                ExpenseWithStaff expenseWithStaff = new ExpenseWithStaff(
                         expense,
-                        staff.getName()
+                        staff
                 );
                 
                 expenses.add(expenseWithStaff);
@@ -374,7 +375,7 @@ public class StaffRepository {
                 expensesStmt.setInt(1, staff.getId());
                 ResultSet expensesRs = expensesStmt.executeQuery();
                 
-                List<ExpenseRepository.ExpenseWithStaff> expenses = new ArrayList<>();
+                List<ExpenseWithStaff> expenses = new ArrayList<>();
                 
                 while (expensesRs.next()) {
                     Model.Expense expense = new Model.Expense(
@@ -386,9 +387,9 @@ public class StaffRepository {
                             expensesRs.getInt("staff_id")
                     );
                     
-                    ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
+                    ExpenseWithStaff expenseWithStaff = new ExpenseWithStaff(
                             expense,
-                            staff.getName()
+                            staff
                     );
                     
                     expenses.add(expenseWithStaff);
@@ -406,9 +407,9 @@ public class StaffRepository {
      */
     public static class StaffWithExpenses {
         private final Staff staff;
-        private final List<ExpenseRepository.ExpenseWithStaff> expenses;
+        private final List<ExpenseWithStaff> expenses;
         
-        public StaffWithExpenses(Staff staff, List<ExpenseRepository.ExpenseWithStaff> expenses) {
+        public StaffWithExpenses(Staff staff, List<ExpenseWithStaff> expenses) {
             this.staff = staff;
             this.expenses = expenses;
         }
@@ -417,7 +418,7 @@ public class StaffRepository {
             return staff;
         }
         
-        public List<ExpenseRepository.ExpenseWithStaff> getExpenses() {
+        public List<ExpenseWithStaff> getExpenses() {
             return expenses;
         }
         

@@ -1,6 +1,7 @@
 package Components;
 
 import Controller.ExpenseController;
+import Model.ExpenseWithStaff;
 import Repository.ExpenseRepository;
 import Support.Router;
 import Support.UIConstants;
@@ -194,14 +195,8 @@ public class ExpensePanel extends JPanel {
      * Load the expenses from the database.
      */
     private void loadExpenses() {
-        try {
-            List<ExpenseRepository.ExpenseWithStaff> expenses = expenseController.getAllExpensesWithStaff();
-            updateTableModel(expenses);
-        } catch (SQLException ex) {
-            Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error loading expenses", ex);
-            JOptionPane.showMessageDialog(this, "Error loading expenses: " + ex.getMessage(), 
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
+        List<ExpenseWithStaff> expenses = expenseController.getAllExpensesWithStaff();
+        updateTableModel(expenses);
     }
     
     /**
@@ -210,14 +205,8 @@ public class ExpensePanel extends JPanel {
      * @param searchText The text to search for
      */
     private void searchExpenses(String searchText) {
-        try {
-            List<ExpenseRepository.ExpenseWithStaff> expenses = expenseController.searchExpensesWithStaff(searchText);
-            updateTableModel(expenses);
-        } catch (SQLException ex) {
-            Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error searching expenses", ex);
-            JOptionPane.showMessageDialog(this, "Error searching expenses: " + ex.getMessage(), 
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
+        List<ExpenseWithStaff> expenses = expenseController.searchExpensesWithStaff(searchText);
+        updateTableModel(expenses);
     }
     
     /**
@@ -225,14 +214,14 @@ public class ExpensePanel extends JPanel {
      * 
      * @param expenses The list of expenses to display
      */
-    private void updateTableModel(List<ExpenseRepository.ExpenseWithStaff> expenses) {
+    private void updateTableModel(List<ExpenseWithStaff> expenses) {
         // Create the table model
         String[] columnNames = {"ID", "Name", "Description", "Amount", "Staff", "Actions"};
         Object[][] data = new Object[expenses.size()][columnNames.length];
         
         // Populate the data
         for (int i = 0; i < expenses.size(); i++) {
-            ExpenseRepository.ExpenseWithStaff expense = expenses.get(i);
+            ExpenseWithStaff expense = expenses.get(i);
             data[i][0] = expense.getExpense().getId();
             data[i][1] = expense.getExpense().getName();
             data[i][2] = expense.getExpense().getDescription();
@@ -397,18 +386,8 @@ public class ExpensePanel extends JPanel {
                 );
                 
                 if (confirm == JOptionPane.YES_OPTION) {
-                    try {
-                        expenseController.deleteExpense(expenseId);
-                        loadExpenses(); // Reload to reflect the deletion
-                    } catch (SQLException ex) {
-                        Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error deleting expense", ex);
-                        JOptionPane.showMessageDialog(
-                            panel, 
-                            "Error deleting expense: " + ex.getMessage(), 
-                            "Database Error", 
-                            JOptionPane.ERROR_MESSAGE
-                        );
-                    }
+                    expenseController.deleteExpense(expenseId);
+                    loadExpenses();
                 }
             });
             
