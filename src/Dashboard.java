@@ -4,7 +4,9 @@ import Components.StaffFormPanel;
 import Components.StaffPanel;
 import Controller.ExpenseController;
 import Controller.StaffController;
+import Model.Staff;
 import Support.Router;
+import Support.SessionManager;
 import Support.UIConstants;
 import java.awt.*;
 import java.awt.event.*;
@@ -18,6 +20,7 @@ public class Dashboard extends javax.swing.JFrame {
     private Router router;
     private JButton btnStaff;
     private JButton btnExpense;
+    private JButton btnEditProfile;
     private JButton btnLogout;
     private JButton currentSelectedButton;
     
@@ -62,16 +65,18 @@ public class Dashboard extends javax.swing.JFrame {
         // Create sidebar buttons
         btnStaff = new JButton("Staff Management");
         btnExpense = new JButton("Expense Management");
+        btnEditProfile = new JButton("Edit Profile");
         btnLogout = new JButton("Logout");
         
         // Style the buttons
-        JButton[] buttons = {btnStaff, btnExpense, btnLogout};
+        JButton[] buttons = {btnStaff, btnExpense, btnLogout, btnEditProfile};
         for (JButton button : buttons) {
             applyButtonStyles(button);
         }
         
         // Add special styling to logout
         btnLogout.setBackground(UIConstants.DANGER_COLOR);
+        btnEditProfile.setBackground(UIConstants.INFO_COLOR);
         
         // Add action listeners
         btnStaff.addActionListener(e -> {
@@ -83,7 +88,14 @@ public class Dashboard extends javax.swing.JFrame {
             updateButtonSelectionState(btnExpense);
             router.navigate("/expenses");
         });
-        
+
+        btnEditProfile.addActionListener(e -> {
+            updateButtonSelectionState(btnEditProfile);
+            Staff staff = SessionManager.getCurrentUser();
+            router.navigate("/staffs/edit/" + staff.getId());
+        });
+
+
         btnLogout.addActionListener(e -> {
             int confirm = JOptionPane.showConfirmDialog(
                 this,
@@ -93,6 +105,10 @@ public class Dashboard extends javax.swing.JFrame {
             );
             
             if (confirm == JOptionPane.YES_OPTION) {
+                // Clear the session
+                SessionManager.logout();
+                
+                // Close dashboard and show login
                 dispose();
                 new Login().setVisible(true);
             }
@@ -105,6 +121,7 @@ public class Dashboard extends javax.swing.JFrame {
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(btnExpense);
         sidebar.add(Box.createVerticalGlue());
+        sidebar.add(btnEditProfile);
         sidebar.add(btnLogout);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
         
@@ -149,7 +166,11 @@ public class Dashboard extends javax.swing.JFrame {
                 if (button != currentSelectedButton) {
                     if (button == btnLogout) {
                         button.setBackground(UIConstants.DANGER_COLOR);
-                    } else {
+                    }
+                    else if(button == btnEditProfile) {
+                        button.setBackground(UIConstants.INFO_COLOR);
+                    }
+                    else {
                         button.setBackground(UIConstants.SIDEBAR_COLOR);
                     }
                 }
@@ -167,7 +188,11 @@ public class Dashboard extends javax.swing.JFrame {
         if (currentSelectedButton != null) {
             if (currentSelectedButton == btnLogout) {
                 currentSelectedButton.setBackground(UIConstants.DANGER_COLOR);
-            } else {
+            }
+            else if(currentSelectedButton == btnEditProfile) {
+                btnStaff.setBackground(UIConstants.INFO_COLOR);
+            }
+            else {
                 currentSelectedButton.setBackground(UIConstants.SIDEBAR_COLOR);
             }
         }

@@ -3,6 +3,8 @@ package Components;
 import Controller.StaffController;
 import Model.ExpenseWithStaff;
 import Model.Staff;
+import Policy.Permission;
+import Policy.PermissionChecker;
 import Repository.StaffRepository;
 import Support.Router;
 import Support.UIConstants;
@@ -21,6 +23,8 @@ public class StaffDetailsPanel extends JPanel {
     private final StaffController staffController;
     private final Staff staff;
     private final Router router;
+    private JButton editButton;
+    private JButton deleteButton;
     
     /**
      * Creates a new StaffDetailsPanel.
@@ -51,6 +55,9 @@ public class StaffDetailsPanel extends JPanel {
         loadingLabel.setFont(UIConstants.TITLE_FONT);
         loadingLabel.setForeground(UIConstants.TEXT_COLOR);
         add(loadingLabel, BorderLayout.CENTER);
+        
+        // Call permission check at end of initialization
+        applyPermissions();
     }
     
     /**
@@ -144,46 +151,81 @@ public class StaffDetailsPanel extends JPanel {
      * @return The header panel
      */
     private JPanel setupHeaderPanel() {
-        // Header panel with card-like appearance
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BorderLayout());
-        headerPanel.setBackground(Color.WHITE);
-        headerPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING)
-        ));
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(UIConstants.PRIMARY_COLOR);
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20));
+        
+        JLabel titleLabel = new JLabel("Staff Details");
+        titleLabel.setFont(UIConstants.TITLE_FONT);
+        titleLabel.setForeground(Color.WHITE);
+        headerPanel.add(titleLabel, BorderLayout.WEST);
+        
+        JPanel actionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        actionsPanel.setOpaque(false);
         
         // Back button
-        JButton btnBack = new JButton("Back to Staff List");
-        btnBack.setFont(UIConstants.BUTTON_FONT);
-        btnBack.setForeground(Color.WHITE);
-        btnBack.setBackground(UIConstants.PRIMARY_COLOR);
-        btnBack.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H, 
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H
-        ));
-        btnBack.setFocusPainted(false);
-        
-        // Add hover effect
-        btnBack.addMouseListener(new MouseAdapter() {
+        JLabel backButton = new JLabel("Back to Staff List");
+        backButton.setFont(new Font("Arial", Font.BOLD, 13));
+        backButton.setForeground(Color.WHITE);
+        backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        backButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                router.navigate("staffs");
+            }
+            
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnBack.setBackground(UIConstants.ACCENT_COLOR);
+                backButton.setText("<html><u>Back to Staff List</u></html>");
             }
             
             @Override
             public void mouseExited(MouseEvent e) {
-                btnBack.setBackground(UIConstants.PRIMARY_COLOR);
+                backButton.setText("Back to Staff List");
             }
         });
+        actionsPanel.add(backButton);
         
-        btnBack.addActionListener(e -> {
-            router.navigate("/staffs");
+        // Edit button - only shown if user has edit permission
+        editButton = new JButton("Edit");
+        editButton.setBackground(UIConstants.SECONDARY_COLOR);
+        editButton.setForeground(Color.WHITE);
+        editButton.setFocusPainted(false);
+        editButton.addActionListener(e -> router.navigate("staffs/edit/" + staff.getId()));
+        actionsPanel.add(editButton);
+        
+        // Delete button - only shown if user has delete permission
+        deleteButton = new JButton("Delete");
+        deleteButton.setBackground(UIConstants.DANGER_COLOR);
+        deleteButton.setForeground(Color.WHITE);
+        deleteButton.setFocusPainted(false);
+        deleteButton.addActionListener(e -> {
+            int result = JOptionPane.showConfirmDialog(
+                    this,
+                    "Are you sure you want to delete this staff member?",
+                    "Confirm Delete",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            
+            if (result == JOptionPane.YES_OPTION) {
+                try {
+                    boolean deleted = staffController.deleteStaff(staff.getId());
+                    if (deleted) {
+                        JOptionPane.showMessageDialog(this, "Staff deleted successfully");
+                        router.navigate("staffs");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Failed to delete staff", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (SQLException | IllegalArgumentException ex) {
+                    Logger.getLogger(StaffDetailsPanel.class.getName()).log(Level.SEVERE, "Error deleting staff", ex);
+                    JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         });
+        actionsPanel.add(deleteButton);
         
-        headerPanel.add(btnBack, BorderLayout.WEST);
+        headerPanel.add(actionsPanel, BorderLayout.EAST);
         
         return headerPanel;
     }
@@ -345,5 +387,14 @@ public class StaffDetailsPanel extends JPanel {
             }
         }
         return null;
+    }
+    
+    // After panel is initialized, apply the permission checks
+    private void applyPermissions() {
+        // Check edit permission
+        PermissionChecker.hideIfUnauthorized(editButton, "Staff", Permission.EDIT, staff.getId());
+        
+        // Check delete permission
+        PermissionChecker.hideIfUnauthorized(deleteButton, "Staff", Permission.DELETE, staff.getId());
     }
 } 

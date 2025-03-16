@@ -1,9 +1,12 @@
 import Controller.StaffController;
+import Model.Staff;
+import Support.SessionManager;
 import java.sql.SQLException;
 
 import javax.swing.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.Optional;
 
 /**
  *
@@ -189,10 +192,22 @@ public class Login extends javax.swing.JFrame {
         String password = new String(txtPassword.getPassword());
         
         try {
+            // Validate login
             staffController.validateLogin(username, password);
-            // If we get here, login was successful
-            this.dispose();
-            new Dashboard().setVisible(true);
+            
+            // If login successful, get the staff member and set it as the current user
+            Optional<Staff> staffOpt = staffController.getStaffByUserName(username);
+            if (staffOpt.isPresent()) {
+                // Set the current user in the session
+                SessionManager.setCurrentUser(staffOpt.get());
+                
+                // Navigate to dashboard
+                this.dispose();
+                new Dashboard().setVisible(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Error: User not found after validation", 
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error logging in: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (SQLException e) {
