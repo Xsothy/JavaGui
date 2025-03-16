@@ -331,10 +331,7 @@ public class StaffRepository {
                 
                 ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
                         expense,
-                        staff.getName(),
-                        staff.getPosition(),
-                        staff.getUserName(),
-                        staff.getRole()
+                        staff.getName()
                 );
                 
                 expenses.add(expenseWithStaff);
@@ -391,10 +388,7 @@ public class StaffRepository {
                     
                     ExpenseRepository.ExpenseWithStaff expenseWithStaff = new ExpenseRepository.ExpenseWithStaff(
                             expense,
-                            staff.getName(),
-                            staff.getPosition(),
-                            staff.getUserName(),
-                            staff.getRole()
+                            staff.getName()
                     );
                     
                     expenses.add(expenseWithStaff);

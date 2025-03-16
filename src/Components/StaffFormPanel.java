@@ -2,6 +2,8 @@ package Components;
 
 import Controller.StaffController;
 import Model.Staff;
+import Support.Router;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -14,9 +16,10 @@ import java.util.logging.Logger;
  */
 public class StaffFormPanel extends JPanel {
     private final StaffController staffController;
-    private final JComponent parentComponent;
+    private Staff staff;
     private int staffId = 0;
     private boolean isEditMode;
+    private final Router router;
     
     // Form components
     private JTextField txtName;
@@ -26,45 +29,32 @@ public class StaffFormPanel extends JPanel {
     private JComboBox<String> cmbRole;
     private JButton btnSave;
     private JButton btnCancel;
-    
-    /**
-     * Creates a new StaffFormPanel in add mode.
-     * 
-     * @param parentComponent The parent component for refreshing data
-     */
-    public StaffFormPanel(JComponent parentComponent) {
+
+    public StaffFormPanel(Router router) {
         this.staffController = new StaffController();
-        this.parentComponent = parentComponent;
+        this.router = router;
         this.isEditMode = false;
+        this.staff = null;
         
         initComponents();
         setupListeners();
     }
-    
-    /**
-     * Creates a new StaffFormPanel in edit mode.
-     * 
-     * @param staffId The ID of the staff member to edit
-     * @param name The name of the staff member
-     * @param position The position of the staff member
-     * @param username The username of the staff member
-     * @param role The role of the staff member
-     * @param parentComponent The parent component for refreshing data
-     */
-    public StaffFormPanel(int staffId, String name, String position, String username, String role, JComponent parentComponent) {
+
+    public StaffFormPanel(Staff staff, Router router) {
+        this.router = router;
         this.staffController = new StaffController();
-        this.parentComponent = parentComponent;
-        this.staffId = staffId;
+        this.staff = staff;
+        this.staffId = staff.getId();
         this.isEditMode = true;
         
         initComponents();
         setupListeners();
         
         // Fill the form with the staff data
-        txtName.setText(name);
-        txtPosition.setText(position);
-        txtUsername.setText(username);
-        cmbRole.setSelectedItem(role);
+        txtName.setText(staff.getName());
+        txtPosition.setText(staff.getPosition());
+        txtUsername.setText(staff.getUserName());
+        cmbRole.setSelectedItem(staff.getRole());
         
         // In edit mode, password is optional, so make the field less prominent
         txtPassword.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
@@ -174,11 +164,7 @@ public class StaffFormPanel extends JPanel {
                         createStaff();
                     }
                     
-                    // Close the window
-                    Window window = SwingUtilities.getWindowAncestor(this);
-                    if (window != null) {
-                        window.dispose();
-                    }
+                    router.navigate("/staffs");
                 }
             } catch (SQLException ex) {
                 Logger.getLogger(StaffFormPanel.class.getName()).log(Level.SEVERE, "Database error", ex);
@@ -192,10 +178,7 @@ public class StaffFormPanel extends JPanel {
         
         // Cancel button listener
         btnCancel.addActionListener(e -> {
-            Window window = SwingUtilities.getWindowAncestor(this);
-            if (window != null) {
-                window.dispose();
-            }
+            router.navigate("/staffs");
         });
     }
     
@@ -266,7 +249,7 @@ public class StaffFormPanel extends JPanel {
         String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword()).trim();
         String role = (String) cmbRole.getSelectedItem();
-        
+
         try {
             // Get the staff member from the database
             Staff staff = staffController.getStaffById(staffId)

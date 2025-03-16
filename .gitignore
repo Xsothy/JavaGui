@@ -2,4 +2,5 @@
 build
 .idea
 out
-/src/img/expenses/
+/src/img/expenses
+/database.db

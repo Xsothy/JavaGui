@@ -1,238 +1,207 @@
+import Components.ExpenseFormPanel;
 import Components.ExpensePanel;
+import Components.StaffFormPanel;
 import Components.StaffPanel;
-import java.awt.Color;
-import javax.swing.*;
+import Controller.ExpenseController;
+import Controller.StaffController;
 import Support.Router;
+import Support.UIConstants;
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
 
+/**
+ * Main dashboard of the application.
+ */
 public class Dashboard extends javax.swing.JFrame {
+    private JPanel contentPanel;
     private Router router;
+    private JButton btnStaff;
+    private JButton btnExpense;
+    private JButton btnLogout;
+    private JButton currentSelectedButton;
     
+    /**
+     * Creates a new Dashboard.
+     */
     public Dashboard() {
         initComponents();
+        setupRouter();
         
-        // Initialize the router
-        router = Router.getInstance(MainPanel);
+        // Show staff panel by default
+        btnStaff.doClick();
         
-        // Register routes
-        router.register("/staff", new StaffPanel(MainPanel));
-        router.register("/expenses", new ExpensePanel(MainPanel));
-        
-        // Navigate to the default route
-        router.navigate("/staff");
-        
-        // Apply button styles
-        applyButtonStyles(btnExpense);
-        applyButtonStyles(btnStaff);
-        applyButtonStyles(btnLogout);
+        // Center the frame on the screen
+        setLocationRelativeTo(null);
     }
      
-    private void applyButtonStyles(JButton button) {
-        button.setOpaque(true);
-        button.setBorderPainted(false);
-        addHoverEffect(button);  
+    /**
+     * Initialize the components.
+     */
+    private void initComponents() {
+        setTitle("Dashboard - Staff and Expense Management");
+        setSize(1100, 700);
+        setMinimumSize(new Dimension(900, 600));
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new BorderLayout());
+        
+        // Create the sidebar
+        JPanel sidebar = new JPanel();
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
+        sidebar.setBackground(UIConstants.SIDEBAR_COLOR);
+        sidebar.setPreferredSize(new Dimension(200, getHeight()));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIConstants.BORDER_COLOR));
+        
+        // Add sidebar heading
+        JLabel sidebarTitle = new JLabel("Management System");
+        sidebarTitle.setFont(UIConstants.TITLE_FONT);
+        sidebarTitle.setForeground(Color.WHITE);
+        sidebarTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidebarTitle.setBorder(BorderFactory.createEmptyBorder(30, 10, 20, 10));
+        
+        // Create sidebar buttons
+        btnStaff = new JButton("Staff Management");
+        btnExpense = new JButton("Expense Management");
+        btnLogout = new JButton("Logout");
+        
+        // Style the buttons
+        JButton[] buttons = {btnStaff, btnExpense, btnLogout};
+        for (JButton button : buttons) {
+            applyButtonStyles(button);
+        }
+        
+        // Add special styling to logout
+        btnLogout.setBackground(UIConstants.DANGER_COLOR);
+        
+        // Add action listeners
+        btnStaff.addActionListener(e -> {
+            updateButtonSelectionState(btnStaff);
+            router.navigate("/staffs");
+        });
+        
+        btnExpense.addActionListener(e -> {
+            updateButtonSelectionState(btnExpense);
+            router.navigate("/expenses");
+        });
+        
+        btnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to logout?",
+                "Confirm Logout",
+                JOptionPane.YES_NO_OPTION
+            );
+            
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose();
+                new Login().setVisible(true);
+            }
+        });
+        
+        // Add to sidebar with proper spacing
+        sidebar.add(sidebarTitle);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 15)));
+        sidebar.add(btnStaff);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidebar.add(btnExpense);
+        sidebar.add(Box.createVerticalGlue());
+        sidebar.add(btnLogout);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
+        
+        // Create the content panel
+        contentPanel = new JPanel();
+        contentPanel.setLayout(new BorderLayout());
+        contentPanel.setBackground(Color.WHITE);
+        
+        // Add the components to the frame
+        add(sidebar, BorderLayout.WEST);
+        add(contentPanel, BorderLayout.CENTER);
     }
 
     /**
-     * This method is called from within the constructor to initialize the form. WARNING: Do NOT modify this code. The content of this method is always regenerated by the Form Editor.
+     * Apply consistent styling to a button.
+     * 
+     * @param button The button to style
      */
-    @SuppressWarnings("unchecked")
-    // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
-    private void initComponents() {
-
-        jPanel1 = new javax.swing.JPanel();
-        logo = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
-        btnExpense = new javax.swing.JButton();
-        btnStaff = new javax.swing.JButton();
-        btnLogout = new javax.swing.JButton();
-        jLabel2 = new javax.swing.JLabel();
-        MainPanel = new javax.swing.JPanel();
-
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(1920, 1920));
-
-        jPanel1.setBackground(new java.awt.Color(50, 55, 89));
-
-        logo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/logo-s.png"))); // NOI18N
-        java.util.ResourceBundle bundle = java.util.ResourceBundle.getBundle("Bundle"); // NOI18N
-        logo.setText(bundle.getString("Dashboard.logo.text")); // NOI18N
-
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel1.setText(bundle.getString("Dashboard.jLabel1.text")); // NOI18N
-
-        btnExpense.setBackground(new java.awt.Color(50, 55, 89));
-        btnExpense.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnExpense.setForeground(new java.awt.Color(255, 255, 255));
-        btnExpense.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/product.png"))); // NOI18N
-        btnExpense.setText(bundle.getString("Dashboard.btnExpense.text")); // NOI18N
-        btnExpense.setActionCommand(bundle.getString("Dashboard.btnExpense.actionCommand")); // NOI18N
-        btnExpense.setContentAreaFilled(false);
-        btnExpense.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnExpense.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        btnExpense.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnExpenseActionPerformed(evt);
-            }
-        });
-
-        btnStaff.setBackground(new java.awt.Color(50, 55, 89));
-        btnStaff.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnStaff.setForeground(new java.awt.Color(255, 255, 255));
-        btnStaff.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/staff.png"))); // NOI18N
-        btnStaff.setText(bundle.getString("Dashboard.btnStaff.text")); // NOI18N
-        btnStaff.setContentAreaFilled(false);
-        btnStaff.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnStaff.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        btnStaff.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnStaffActionPerformed(evt);
-            }
-        });
-
-        btnLogout.setBackground(new java.awt.Color(50, 55, 89));
-        btnLogout.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
-        btnLogout.setForeground(new java.awt.Color(255, 255, 255));
-        btnLogout.setIcon(new javax.swing.ImageIcon(getClass().getResource("/img/logout.png"))); // NOI18N
-        btnLogout.setText(bundle.getString("Dashboard.btnLogout.text")); // NOI18N
-        btnLogout.setContentAreaFilled(false);
-        btnLogout.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnLogout.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        btnLogout.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                btnLogoutActionPerformed(evt);
-            }
-        });
-
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(255, 255, 255));
-        jLabel2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jLabel2.setText(bundle.getString("Dashboard.jLabel2.text")); // NOI18N
-
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(75, 75, 75)
-                        .addComponent(logo))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addGap(66, 66, 66)
-                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 124, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(jLabel2))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                        .addComponent(btnExpense, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(btnStaff, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addComponent(btnLogout, javax.swing.GroupLayout.PREFERRED_SIZE, 160, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addGap(48, 48, 48))
-        );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
-                .addGap(33, 33, 33)
-                .addComponent(logo)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 31, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 32, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(145, 145, 145)
-                .addComponent(btnExpense, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(55, 55, 55)
-                .addComponent(btnStaff, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(55, 55, 55)
-                .addComponent(btnLogout, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        MainPanel.setBackground(new java.awt.Color(255, 255, 255));
-        MainPanel.setMinimumSize(new java.awt.Dimension(1280, 1920));
-        MainPanel.setLayout(new java.awt.BorderLayout());
-
-        javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
-        getContentPane().setLayout(layout);
-        layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(MainPanel, javax.swing.GroupLayout.DEFAULT_SIZE, 1633, Short.MAX_VALUE))
-        );
-        layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jPanel1, javax.swing.GroupLayout.Alignment.LEADING, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(MainPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 1321, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-        );
-
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
-
-
-   public void controlPanel(JPanel newPanel) {
-        MainPanel.removeAll();
-        MainPanel.add(newPanel);
-        MainPanel.revalidate();
-        MainPanel.repaint();
-    }
-
-    private void btnExpenseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnExpenseActionPerformed
-        router.navigate("/expenses");
-    }//GEN-LAST:event_btnExpenseActionPerformed
-
-    private void btnStaffActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStaffActionPerformed
-        router.navigate("/staff");
-    }//GEN-LAST:event_btnStaffActionPerformed
-
-    private void btnLogoutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogoutActionPerformed
-        // TODO add your handling code here:
-        this.dispose();
-        Login frm = new Login();
-        frm.setVisible(true);
-    }//GEN-LAST:event_btnLogoutActionPerformed
-
-    private JButton focusedButton = null;
-
-    private void addHoverEffect(JButton button) {
-        Color originalColor = button.getBackground(); 
-
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
+    private void applyButtonStyles(JButton button) {
+        button.setOpaque(true);
+        button.setBorderPainted(false);
+        button.setFocusPainted(false);
+        button.setFont(UIConstants.BUTTON_FONT);
+        button.setForeground(Color.WHITE);
+        button.setBackground(UIConstants.SIDEBAR_COLOR);
+        button.setAlignmentX(Component.CENTER_ALIGNMENT);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setMaximumSize(new Dimension(180, 40));
+        button.setPreferredSize(new Dimension(180, 40));
+        
+        // Add hover effect
+        button.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (button != focusedButton) {
-                    button.setBackground(new Color(70, 75, 120)); 
+            public void mouseEntered(MouseEvent e) {
+                if (button != currentSelectedButton) {
+                    button.setBackground(UIConstants.ACCENT_COLOR);
                 }
             }
-
+            
             @Override
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (button != focusedButton) {
-                    button.setBackground(originalColor); 
+            public void mouseExited(MouseEvent e) {
+                if (button != currentSelectedButton) {
+                    if (button == btnLogout) {
+                        button.setBackground(UIConstants.DANGER_COLOR);
+                    } else {
+                        button.setBackground(UIConstants.SIDEBAR_COLOR);
+                    }
                 }
-            }
-
-            @Override
-            public void mousePressed(java.awt.event.MouseEvent evt) {
-               
-                if (focusedButton != null) {
-                    focusedButton.setBackground(originalColor); 
-                }
-                focusedButton = button; 
-                button.setBackground(new Color(73, 71, 79));
             }
         });
     }
 
-    
-    
+    /**
+     * Update the visual state of buttons when selected.
+     * 
+     * @param selectedButton The currently selected button
+     */
+    private void updateButtonSelectionState(JButton selectedButton) {
+        // Reset previous selected button
+        if (currentSelectedButton != null) {
+            if (currentSelectedButton == btnLogout) {
+                currentSelectedButton.setBackground(UIConstants.DANGER_COLOR);
+            } else {
+                currentSelectedButton.setBackground(UIConstants.SIDEBAR_COLOR);
+            }
+        }
+        
+        // Set current selected button
+        currentSelectedButton = selectedButton;
+        currentSelectedButton.setBackground(UIConstants.PRIMARY_COLOR);
+    }
+
+    /**
+     * Set up the router for navigation.
+     */
+    private void setupRouter() {
+        router = new Router(contentPanel);
+        
+        // Register routes
+        router.register("/staffs", new StaffPanel(router));
+        router.register("/staffs/{id}", parameters -> {
+            return new StaffController().show(parameters, router);
+        });
+        router.register("/staffs/add", new StaffFormPanel(router));
+        router.register("/staffs/edit/{id}", parameters -> {
+            return new StaffController().edit(parameters, router);
+        });
+        router.register("/expenses", new ExpensePanel(router));
+        router.register("/expenses/add", new ExpenseFormPanel(router));
+        router.register("/expenses/edit/{id}", parameters -> {
+            return new ExpenseController().edit(parameters, router);
+        });
+        
+        // Default route
+        router.navigate("/staffs");
+    }
+
     /**
      * @param args the command line arguments
      */
@@ -243,46 +212,29 @@ public class Dashboard extends javax.swing.JFrame {
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(Dashboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(Dashboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(Dashboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            // Set some global UI defaults
+            UIManager.put("OptionPane.background", Color.WHITE);
+            UIManager.put("Panel.background", Color.WHITE);
+            UIManager.put("OptionPane.messageFont", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("OptionPane.buttonFont", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("TextField.font", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("Label.font", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("Button.font", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("Table.font", new Font("Segoe UI", Font.PLAIN, 14));
+            UIManager.put("TableHeader.font", new Font("Segoe UI", Font.BOLD, 14));
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | javax.swing.UnsupportedLookAndFeelException ex) {
             java.util.logging.Logger.getLogger(Dashboard.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
-        //</editor-fold>
 
         /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                new Dashboard().setVisible(true);
-            }
+        java.awt.EventQueue.invokeLater(() -> {
+            Dashboard dashboard = new Dashboard();
+            dashboard.setVisible(true);
         });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JPanel MainPanel;
-    private javax.swing.JButton btnExpense;
-    private javax.swing.JButton btnLogout;
-    private javax.swing.JButton btnStaff;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JLabel logo;
     // End of variables declaration//GEN-END:variables
 }
