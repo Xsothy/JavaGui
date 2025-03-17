@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * A panel for displaying a staff member with their expenses.
  */
-public class StaffExpensePanel extends JPanel {
+public class StaffExpensePanel extends NavigatePanel {
     private final StaffController staffController;
     private final StaffRepository.StaffWithExpenses staffWithExpenses;
     private final JTable expenseTable;

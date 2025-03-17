@@ -2,6 +2,7 @@ package Controller;
 
 import Components.ExpenseFormPanel;
 import Components.ExpensePanel;
+import Components.NavigatePanel;
 import Model.Expense;
 import Model.ExpenseWithStaff;
 import Model.Staff;
@@ -11,10 +12,7 @@ import Support.FileUtils;
 import Support.Router;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -44,7 +42,7 @@ public class ExpenseController {
         }
     }
 
-    public JPanel edit(Map<String, String> params, Router router) {
+    public NavigatePanel edit(Map<String, String> params, Router router) {
         // Extract the ID parameter
         int expenseId = Integer.parseInt(params.get("id"));
 
@@ -53,7 +51,7 @@ public class ExpenseController {
             Optional<Expense> expenseOpt = this.getExpenseById(expenseId);
             if (expenseOpt.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Expense not found", "Error", JOptionPane.ERROR_MESSAGE);
-                return new JPanel(); // Return empty panel or navigate back
+                return new NavigatePanel(); // Return empty panel or navigate back
             }
 
             return new ExpenseFormPanel(router, expenseOpt.get());
@@ -61,7 +59,7 @@ public class ExpenseController {
             Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error opening expense edit form", ex);
             JOptionPane.showMessageDialog(null, "Error opening expense edit form: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
-            return new JPanel(); // Return empty panel or navigate back
+            return new NavigatePanel(); // Return empty panel or navigate back
         }
     }
 
@@ -146,17 +144,16 @@ public class ExpenseController {
 
     /**
      * Deletes an expense.
-     * 
+     *
      * @param expenseId The ID of the expense to delete
-     * @return True if the expense was deleted successfully, false otherwise
      * @throws IllegalArgumentException If the input is invalid
      */
-    public boolean deleteExpense(int expenseId) throws IllegalArgumentException {
+    public void deleteExpense(int expenseId) throws IllegalArgumentException {
         if (expenseId <= 0) {
             throw new IllegalArgumentException("Invalid expense ID");
         }
-        
-        return expenseRepository.deleteExpense(expenseId);
+
+        expenseRepository.deleteExpense(expenseId);
     }
 
     /**
@@ -168,15 +165,84 @@ public class ExpenseController {
         return expenseRepository.getAllExpensesWithStaff();
     }
 
-    /**
-     * Searches for expenses with staff information.
-     * 
-     * @param searchTerm The search term
-     * @return A list of matching expenses with staff information
-     */
-    public List<ExpenseWithStaff> searchExpensesWithStaff(String searchTerm) {
-        return expenseRepository.searchExpensesWithStaff(searchTerm);
+    public List<ExpenseWithStaff> filterExpense(String searchTerm, String duration) {
+        List<ExpenseWithStaff> expenses;
+
+        if (searchTerm != null && !searchTerm.isEmpty()) {
+            expenses = expenseRepository.searchExpensesWithStaff(searchTerm);
+        } else {
+            expenses = expenseRepository.getAllExpensesWithStaff();
+        }
+
+        if (duration != null && !duration.equals("All")) {
+            expenses = filterByDuration(expenses, duration);
+        }
+
+        return expenses;
     }
+
+    private List<ExpenseWithStaff> filterByDuration(List<ExpenseWithStaff> expenses, String duration) {
+        List<ExpenseWithStaff> filteredExpenses = new ArrayList<>();
+        Calendar calendar = Calendar.getInstance();
+        java.util.Date today = calendar.getTime();
+
+        switch (duration) {
+            case "This Week":
+                calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+                java.util.Date startOfWeek = calendar.getTime();
+                calendar.add(Calendar.DAY_OF_WEEK, 7);
+                java.util.Date endOfWeek = calendar.getTime();
+                filteredExpenses = filterByDateRange(expenses, startOfWeek, endOfWeek);
+                break;
+            case "Last Week":
+                calendar.add(Calendar.WEEK_OF_YEAR, -1);
+                calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+                java.util.Date startOfLastWeek = calendar.getTime();
+                calendar.add(Calendar.DAY_OF_WEEK, 7);
+                java.util.Date endOfLastWeek = calendar.getTime();
+                filteredExpenses = filterByDateRange(expenses, startOfLastWeek, endOfLastWeek);
+                break;
+            case "This Month":
+                calendar.set(Calendar.DAY_OF_MONTH, 1);
+                java.util.Date startOfMonth = calendar.getTime();
+                calendar.add(Calendar.MONTH, 1);
+                java.util.Date endOfMonth = calendar.getTime();
+                filteredExpenses = filterByDateRange(expenses, startOfMonth, endOfMonth);
+                break;
+            case "Last Month":
+                calendar.add(Calendar.MONTH, -1);
+                calendar.set(Calendar.DAY_OF_MONTH, 1);
+                java.util.Date startOfLastMonth = calendar.getTime();
+                calendar.add(Calendar.MONTH, 1);
+                java.util.Date endOfLastMonth = calendar.getTime();
+                filteredExpenses = filterByDateRange(expenses, startOfLastMonth, endOfLastMonth);
+                break;
+            case "This Year":
+                calendar.set(Calendar.DAY_OF_YEAR, 1);
+                java.util.Date startOfYear = calendar.getTime();
+                calendar.add(Calendar.YEAR, 1);
+                java.util.Date endOfYear = calendar.getTime();
+                filteredExpenses = filterByDateRange(expenses, startOfYear, endOfYear);
+                break;
+            default:
+                filteredExpenses = expenses;
+                break;
+        }
+
+        return filteredExpenses;
+    }
+
+    private List<ExpenseWithStaff> filterByDateRange(List<ExpenseWithStaff> expenses, java.util.Date startDate, java.util.Date endDate) {
+        List<ExpenseWithStaff> filteredExpenses = new ArrayList<>();
+        for (ExpenseWithStaff expenseWithStaff : expenses) {
+            java.util.Date expenseDate = expenseWithStaff.getExpense().getDate();
+            if (expenseDate.compareTo(startDate) >= 0 && expenseDate.compareTo(endDate) < 0) {
+                filteredExpenses.add(expenseWithStaff);
+            }
+        }
+        return filteredExpenses;
+    }
+
 
     /**
      * Gets an expense with staff information by expense ID.

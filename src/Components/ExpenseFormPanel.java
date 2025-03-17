@@ -5,6 +5,7 @@ import Controller.StaffController;
 import Model.Expense;
 import Model.Staff;
 import Support.Router;
+import Support.SessionManager;
 import Support.UIConstants;
 import java.awt.*;
 import java.awt.event.*;
@@ -17,7 +18,7 @@ import javax.swing.*;
 /**
  * A panel for creating and editing expenses.
  */
-public class ExpenseFormPanel extends JPanel {
+public class ExpenseFormPanel extends NavigatePanel {
     private final ExpenseController expenseController;
     private final StaffController staffController;
     private final Router router;
@@ -54,7 +55,6 @@ public class ExpenseFormPanel extends JPanel {
     /**
      * Creates a new ExpenseFormPanel for editing an existing expense.
      * 
-     * @param parentPanel The parent ExpensePanel
      * @param router The router for navigation
      * @param expense The expense to edit
      */
@@ -332,7 +332,13 @@ public class ExpenseFormPanel extends JPanel {
             cmbStaff.removeAllItems();
             
             for (Staff staff : staffList) {
-                cmbStaff.addItem(new StaffComboItem(staff.getId(), staff.getName()));
+                // TODO: Implement Permission
+
+                Staff user = SessionManager.getCurrentUser();
+
+                if (user.getId() == staff.getId() || user.getRole().equalsIgnoreCase("admin")) {
+                    cmbStaff.addItem(new StaffComboItem(staff.getId(), staff.getName()));
+                }
             }
         } catch (SQLException ex) {
             Logger.getLogger(ExpenseFormPanel.class.getName()).log(Level.SEVERE, "Error loading staff list", ex);

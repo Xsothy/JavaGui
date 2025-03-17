@@ -1,9 +1,6 @@
 package Controller;
 
-import Components.ExpenseFormPanel;
-import Components.ExpensePanel;
-import Components.StaffDetailsPanel;
-import Components.StaffFormPanel;
+import Components.*;
 import Model.Expense;
 import Model.Staff;
 import Repository.StaffRepository;
@@ -31,14 +28,14 @@ public class StaffController {
         this.staffRepository = new StaffRepository();
     }
 
-    public JPanel show(Map<String, String> parameters, Router router) {
+    public NavigatePanel show(Map<String, String> parameters, Router router) {
         int staffId = Integer.parseInt(parameters.get("id"));
 
         try {
             Optional<Staff> staffOpt = this.getStaffById(staffId);
             if (staffOpt.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Staff not found", "Error", JOptionPane.ERROR_MESSAGE);
-                return new JPanel(); // Return empty panel or navigate back
+                return new NavigatePanel(); // Return empty panel or navigate back
             }
 
             return new StaffDetailsPanel(staffOpt.get(), router);
@@ -46,11 +43,11 @@ public class StaffController {
             Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error opening staff view", ex);
             JOptionPane.showMessageDialog(null, "Error opening staff view: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
-            return new JPanel(); // Return empty panel or navigate back
+            return new NavigatePanel(); // Return empty panel or navigate back
         }
     }
 
-    public JPanel edit(Map<String, String> parameters, Router router) {
+    public NavigatePanel edit(Map<String, String> parameters, Router router) {
         int staffId = Integer.parseInt(parameters.get("id"));
 
         try {
@@ -58,7 +55,7 @@ public class StaffController {
             Optional<Staff> staffOpt = this.getStaffById(staffId);
             if (staffOpt.isEmpty()) {
                 JOptionPane.showMessageDialog(null, "Staff not found", "Error", JOptionPane.ERROR_MESSAGE);
-                return new JPanel(); // Return empty panel or navigate back
+                return new NavigatePanel(); // Return empty panel or navigate back
             }
 
             return new StaffFormPanel(staffOpt.get(), router);
@@ -66,7 +63,7 @@ public class StaffController {
             Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error opening staff edit form", ex);
             JOptionPane.showMessageDialog(null, "Error opening staff edit form: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
-            return new JPanel(); // Return empty panel or navigate back
+            return new NavigatePanel(); // Return empty panel or navigate back
         }
     }
 

@@ -3,31 +3,27 @@ package Components;
 import Controller.StaffController;
 import Model.Staff;
 import Support.Router;
+import Support.SessionManager;
 import Support.UIConstants;
 import java.awt.*;
 import java.awt.event.*;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 
 /**
  * Panel for viewing and managing staff members.
  */
-public class StaffPanel extends JPanel {
+public class StaffPanel extends NavigatePanel {
     private static final Logger LOGGER = Logger.getLogger(StaffPanel.class.getName());
     private final StaffController staffController;
     private final Router router;
-    private JButton btnAdd;
-    private JTable tblStaff;
-    private JTextField txtSearch;
-    private JScrollPane scrollPane;
+    private JTable staffTable;
+    private JTextField searchField;
 
     /**
      * Creates a new StaffPanel.
@@ -35,251 +31,42 @@ public class StaffPanel extends JPanel {
      * @param router The router for navigation
      */
     public StaffPanel(Router router) {
-        staffController = new StaffController();
+        this.staffController = new StaffController();
         this.router = router;
 
         initComponents();
-        setupListeners();
-        // We'll load data after components are initialized
+        loadStaff();
     }
 
-    /**
-     * Setup component listeners.
-     */
-    private void setupListeners() {
-        btnAdd.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        btnAdd.addActionListener(e -> router.navigate("/staffs/add"));
-
-        txtSearch.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                searchUser(txtSearch.getText());
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                searchUser(txtSearch.getText());
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                // Plain text components don't fire these events
-            }
-        });
-
-        // Add mouse listener to handle double-click for viewing details
-        tblStaff.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                int row = tblStaff.rowAtPoint(e.getPoint());
-
-                if (row >= 0 && e.getClickCount() == 2) {
-                    // Double click to view details
-                    int staffId = (int) tblStaff.getValueAt(row, 0);
-                    router.navigate("/staffs/" + staffId);
-                }
-            }
-        });
-    }
 
     @Override
-    public void addNotify() {
-        super.addNotify();
-
-        // This ensures that data is loaded after the component is fully realized
-        SwingUtilities.invokeLater(this::initializeTable);
+    public void rerender()
+    {
+        loadStaff();
     }
 
     /**
-     * Initialize the table in a safe way, ensuring all steps occur in the right order
-     */
-    private void initializeTable() {
-        try {
-            // Load data first
-            List<Staff> staffList = staffController.getAllStaff();
-
-            // Set a standard model with our column definitions - no Actions column for now
-            DefaultTableModel model = new DefaultTableModel(
-                new Object[][] {},
-                new String[] {"ID", "Name", "Position", "Username"}
-            ) {
-                @Override
-                public boolean isCellEditable(int row, int column) {
-                    return false; // No editable cells
-                }
-                
-                @Override
-                public Class<?> getColumnClass(int columnIndex) {
-                    if (columnIndex == 0) return Integer.class;
-                    return String.class;
-                }
-            };
-            
-            // Add data rows
-            for (Staff staff : staffList) {
-                model.addRow(new Object[] {
-                    staff.getId(),
-                    staff.getName(),
-                    staff.getPosition(),
-                    staff.getUserName()
-                });
-            }
-            
-            // Set the model to the table
-            tblStaff.setModel(model);
-            
-            // Very basic appearance setup
-            tblStaff.setRowHeight(35);
-            tblStaff.setShowGrid(true);
-            tblStaff.setGridColor(Color.LIGHT_GRAY);
-            
-            // Simple center renderer
-            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-            centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-            
-            for (int i = 0; i < tblStaff.getColumnCount(); i++) {
-                tblStaff.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-            }
-            
-            // Add double-click event listener for viewing staff details
-            tblStaff.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    if (e.getClickCount() == 2) {
-                        int row = tblStaff.getSelectedRow();
-                        if (row >= 0) {
-                            int staffId = (int) tblStaff.getValueAt(row, 0);
-                            try {
-                                router.navigate("/staff/" + staffId);
-                            } catch (Exception ex) {
-                                LOGGER.severe("Navigation error: " + ex.getMessage());
-                            }
-                        }
-                    }
-                }
-            });
-
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error loading staff data", ex);
-            JOptionPane.showMessageDialog(this,
-                "Error loading staff data: " + ex.getMessage(),
-                "Database Error",
-                JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * Load staff data and refresh the table.
-     */
-    private void loadStaffData() {
-        SwingUtilities.invokeLater(this::initializeTable);
-    }
-
-    /**
-     * Search for staff members.
-     *
-     * @param keyword The search keyword
-     */
-    public void searchUser(String keyword) {
-        try {
-            List<Staff> staffList = staffController.getAllStaff();
-
-            if (keyword != null && !keyword.trim().isEmpty()) {
-                String searchTerm = keyword.toLowerCase().trim();
-
-                // Filter the staff list based on the search term
-                staffList = staffList.stream()
-                    .filter(staff ->
-                        staff.getName().toLowerCase().contains(searchTerm) ||
-                        staff.getPosition().toLowerCase().contains(searchTerm) ||
-                        staff.getUserName().toLowerCase().contains(searchTerm) ||
-                        staff.getRole().toLowerCase().contains(searchTerm))
-                    .toList();
-            }
-
-            renderStaffTable(staffList);
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Database error", ex);
-            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * Render the staff table with the given list of staff members.
-     *
-     * @param staffs The list of staff members to display
-     */
-    private void renderStaffTable(List<Staff> staffs) {
-        try {
-            // Create a new model with our column headers
-            DefaultTableModel model = new DefaultTableModel(
-                new Object[][] {},
-                new String[] {"ID", "Name", "Position", "Username"}) {
-                    @Override
-                    public boolean isCellEditable(int row, int column) {
-                        return false; // No editable cells
-                    }
-                    
-                    @Override
-                    public Class<?> getColumnClass(int columnIndex) {
-                        if (columnIndex == 0) return Integer.class;
-                        return String.class;
-                    }
-                };
-            
-            // Add data rows
-            for (Staff staff : staffs) {
-                model.addRow(new Object[]{
-                    staff.getId(),
-                    staff.getName(),
-                    staff.getPosition(),
-                    staff.getUserName()
-                });
-            }
-            
-            // Set the model to the table
-            tblStaff.setModel(model);
-            
-            // Basic styling directly here
-            tblStaff.setRowHeight(35);
-            tblStaff.setShowGrid(true);
-            tblStaff.setGridColor(Color.LIGHT_GRAY);
-            
-            // Simple center renderer
-            DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
-            centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-            
-            for (int i = 0; i < tblStaff.getColumnCount(); i++) {
-                tblStaff.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
-            }
-            
-            // Make sure table repaints
-            tblStaff.revalidate();
-            tblStaff.repaint();
-            
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, "Error rendering staff table", ex);
-        }
-    }
-
-    /**
-     * This method is called from within the constructor to initialize the form.
+     * Initialize the components.
      */
     private void initComponents() {
-        setBackground(Color.WHITE);
         setLayout(new BorderLayout(0, 0));
+        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        setBackground(Color.WHITE);
 
-        // Header panel with card-like appearance
-        JPanel headerPanel = new JPanel();
-        headerPanel.setLayout(new BorderLayout());
+        // Create header panel with title and add button
+        JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING, UIConstants.CONTENT_PADDING)
+                BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING
+                )
         ));
 
-        // Left side of header: Title and description
+        // Left side of header: Title and subtitle
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setBackground(Color.WHITE);
@@ -289,7 +76,7 @@ public class StaffPanel extends JPanel {
         titleLabel.setForeground(UIConstants.TEXT_COLOR);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel subtitleLabel = new JLabel("Manage your staff members");
+        JLabel subtitleLabel = new JLabel("Add, edit or delete staff records");
         subtitleLabel.setFont(UIConstants.SUBTITLE_FONT);
         subtitleLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
         subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -308,99 +95,205 @@ public class StaffPanel extends JPanel {
         searchPanel.setLayout(new BorderLayout());
         searchPanel.setBackground(Color.WHITE);
         searchPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
 
-        JLabel searchIcon = new JLabel(getImageIcon("src/img/search.png"));
+        JLabel searchIcon = new JLabel("");
+        searchIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
 
-        txtSearch = new JTextField(15);
-        txtSearch.setBorder(null);
-        txtSearch.setFont(UIConstants.TABLE_CONTENT_FONT);
+        searchField = new JTextField(15);
+        searchField.setBorder(null);
+        searchField.setFont(UIConstants.TABLE_CONTENT_FONT);
 
         searchPanel.add(searchIcon, BorderLayout.WEST);
-        searchPanel.add(txtSearch, BorderLayout.CENTER);
+        searchPanel.add(searchField, BorderLayout.CENTER);
 
         // Add button
-        btnAdd = new JButton("+ Add Staff");
-        btnAdd.setFont(UIConstants.BUTTON_FONT);
-        btnAdd.setForeground(Color.WHITE);
-        btnAdd.setBackground(UIConstants.PRIMARY_COLOR);
-        btnAdd.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.BUTTON_PADDING_V,
-            UIConstants.BUTTON_PADDING_H,
-            UIConstants.BUTTON_PADDING_V,
-            UIConstants.BUTTON_PADDING_H
+        JButton addButton = new JButton("+ Add Staff");
+        addButton.setFont(UIConstants.BUTTON_FONT);
+        addButton.setForeground(Color.WHITE);
+        addButton.setBackground(UIConstants.PRIMARY_COLOR);
+        addButton.setBorder(BorderFactory.createEmptyBorder(
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H,
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H
         ));
-        btnAdd.setFocusPainted(false);
+        addButton.setFocusPainted(false);
+        addButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // TODO:: Implement Policy
+        Staff user = SessionManager.getCurrentUser();
+        addButton.setEnabled(user.getRole().equals("admin"));
+
 
         // Add hover effect
-        btnAdd.addMouseListener(new MouseAdapter() {
+        addButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
-                btnAdd.setBackground(UIConstants.ACCENT_COLOR);
+                addButton.setBackground(UIConstants.ACCENT_COLOR);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                btnAdd.setBackground(UIConstants.PRIMARY_COLOR);
+                addButton.setBackground(UIConstants.PRIMARY_COLOR);
             }
         });
 
+        addButton.addActionListener(e -> router.navigate("/staffs/add"));
+
         actionsPanel.add(searchPanel);
-        actionsPanel.add(btnAdd);
+        actionsPanel.add(addButton);
 
         headerPanel.add(titlePanel, BorderLayout.WEST);
         headerPanel.add(actionsPanel, BorderLayout.EAST);
+
+        add(headerPanel, BorderLayout.NORTH);
 
         // Content panel with table
         JPanel contentPanel = new JPanel(new BorderLayout());
         contentPanel.setBackground(Color.WHITE);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.SECTION_SPACING,
-            UIConstants.CONTENT_PADDING,
-            UIConstants.CONTENT_PADDING,
-            UIConstants.CONTENT_PADDING
+                UIConstants.SECTION_SPACING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING
         ));
 
-        // Initialize the table with a simple model
-        tblStaff = new JTable();
-        tblStaff.setModel(new DefaultTableModel(
-            new Object [][] {},
-            new String [] {"ID", "Name", "Position", "Username"}
-        ));
-        tblStaff.setFillsViewportHeight(true);
-        tblStaff.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        // Create the staff table
+        staffTable = new JTable();
+        staffTable.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
+        staffTable.setShowGrid(true);
+        staffTable.setGridColor(UIConstants.BORDER_COLOR);
+        staffTable.setSelectionBackground(new Color(235, 245, 255));
+        staffTable.setSelectionForeground(UIConstants.TEXT_COLOR);
+        staffTable.setFont(UIConstants.TABLE_CONTENT_FONT);
+        staffTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        staffTable.setFillsViewportHeight(true);
 
-        // Make the JScrollPane look modern
-        scrollPane = new JScrollPane(tblStaff);
+        // Style the header
+        staffTable.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
+        staffTable.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
+        staffTable.getTableHeader().setForeground(Color.WHITE);
+        staffTable.getTableHeader().setPreferredSize(
+                new Dimension(staffTable.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
+        );
+
+        JScrollPane scrollPane = new JScrollPane(staffTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
 
         contentPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Add both panels to the main panel
-        add(headerPanel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
+
+        // Add search listener
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                String searchText = searchField.getText().trim();
+                if (searchText.isEmpty()) {
+                    loadStaff();
+                } else {
+                    searchStaff(searchText);
+                }
+            }
+        });
     }
 
     /**
-     * Get an image icon from the specified path.
-     *
-     * @param imagePath The path to the image
-     * @return The image icon
+     * Load the staff from the database.
      */
-    public static ImageIcon getImageIcon(String imagePath) {
-        if (imagePath != null && !imagePath.isEmpty()) {
-            try {
-                ImageIcon icon = new ImageIcon(Paths.get(imagePath).toAbsolutePath().toString());
-                Image img = icon.getImage().getScaledInstance(24, 24, Image.SCALE_SMOOTH);
-                return new ImageIcon(img);
-            } catch (Exception e) {
-                Logger.getLogger(StaffPanel.class.getName()).log(Level.WARNING, "Error loading image: " + imagePath, e);
-            }
+    private void loadStaff() {
+        try {
+            List<Staff> staff = staffController.getAllStaff();
+            updateTableModel(staff);
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this,
+                    "Error loading staff data: " + ex.getMessage(),
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
         }
-        return null;
+    }
+
+    /**
+     * Search for staff matching the search text.
+     *
+     * @param searchText The text to search for
+     */
+    private void searchStaff(String searchText) {
+        try {
+            List<Staff> staffList = staffController.getAllStaff();
+
+            if (searchText != null && !searchText.trim().isEmpty()) {
+                String searchTerm = searchText.toLowerCase().trim();
+
+                // Filter the staff list based on the search term
+                staffList = staffList.stream()
+                        .filter(staff ->
+                                staff.getName().toLowerCase().contains(searchTerm) ||
+                                        staff.getPosition().toLowerCase().contains(searchTerm) ||
+                                        staff.getUserName().toLowerCase().contains(searchTerm) ||
+                                        staff.getRole().toLowerCase().contains(searchTerm))
+                        .toList();
+            }
+
+            updateTableModel(staffList);
+        } catch (SQLException ex) {
+            LOGGER.log(Level.SEVERE, "Database error", ex);
+            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Update the table model with the provided staff.
+     *
+     * @param staffList The list of staff to display
+     */
+    private void updateTableModel(List<Staff> staffList) {
+        // Create the table model
+        String[] columnNames = {"ID", "Name", "Position", "Username", "Actions"};
+        Object[][] data = new Object[staffList.size()][columnNames.length];
+
+        // Populate the data
+        for (int i = 0; i < staffList.size(); i++) {
+            Staff staff = staffList.get(i);
+            data[i][0] = staff.getId();
+            data[i][1] = staff.getName();
+            data[i][2] = staff.getPosition();
+            data[i][3] = staff.getUserName();
+            data[i][4] = ""; // Will be replaced with buttons
+        }
+
+        DefaultTableModel model = new DefaultTableModel(data, columnNames) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 4; // Only make the actions column editable
+            }
+        };
+
+        staffTable.setModel(model);
+
+        // Set relative column widths as percentages
+        int totalWidth = staffTable.getParent().getWidth();
+        if (totalWidth > 0) {
+            staffTable.getColumnModel().getColumn(0).setPreferredWidth((int)(totalWidth * 0.05));  // ID (5%)
+            staffTable.getColumnModel().getColumn(1).setPreferredWidth((int)(totalWidth * 0.25));  // Name (30%)
+            staffTable.getColumnModel().getColumn(2).setPreferredWidth((int)(totalWidth * 0.20));  // Position (25%)
+            staffTable.getColumnModel().getColumn(3).setPreferredWidth((int)(totalWidth * 0.20));  // Username (25%)
+            staffTable.getColumnModel().getColumn(4).setPreferredWidth((int)(totalWidth * 0.30));  // Actions (15%)
+        }
+
+        // Set the action buttons in the last column
+        staffTable.getColumnModel().getColumn(4).setCellRenderer(new ButtonsRenderer());
+        staffTable.getColumnModel().getColumn(4).setCellEditor(new ButtonsEditor());
+
+        // Center the ID column
+        DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
+        centerRenderer.setHorizontalAlignment(JLabel.CENTER);
+        staffTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
     }
 
     /**
@@ -412,16 +305,14 @@ public class StaffPanel extends JPanel {
         try {
             boolean deleted = staffController.deleteStaff(staffId);
             if (deleted) {
-                JOptionPane.showMessageDialog(this, "Staff deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
-                // Refresh the table
-                loadStaffData();
+                loadStaff();
             } else {
                 JOptionPane.showMessageDialog(this, "Error: Staff could not be deleted.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (SQLException ex) {
-            Logger.getLogger(StaffPanel.class.getName()).log(Level.SEVERE, "Database error", ex);
+            LOGGER.log(Level.SEVERE, "Database error", ex);
             JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -429,51 +320,63 @@ public class StaffPanel extends JPanel {
     /**
      * A simplified renderer for buttons in a table cell.
      */
-    private class ButtonsRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
-        private final JPanel buttonPanel;
+    private static class ButtonsRenderer extends JPanel implements javax.swing.table.TableCellRenderer {
+        private final JButton viewButton;
+        private final JButton editButton;
+        private final JButton deleteButton;
 
         public ButtonsRenderer() {
-            setLayout(new BorderLayout());
+            setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
             setOpaque(true);
-            
-            buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            buttonPanel.setOpaque(true);
-            
-            // Add placeholder buttons that don't need to be functional
-            JButton viewBtn = new JButton("View");
-            JButton editBtn = new JButton("Edit");
-            JButton deleteBtn = new JButton("Delete");
-            
-            // Simple styling
-            viewBtn.setForeground(Color.WHITE);
-            viewBtn.setBackground(UIConstants.INFO_COLOR);
-            viewBtn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-            
-            editBtn.setForeground(Color.WHITE);
-            editBtn.setBackground(UIConstants.PRIMARY_COLOR);
-            editBtn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-            
-            deleteBtn.setForeground(Color.WHITE);
-            deleteBtn.setBackground(UIConstants.DANGER_COLOR);
-            deleteBtn.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-            
-            buttonPanel.add(viewBtn);
-            buttonPanel.add(editBtn);
-            buttonPanel.add(deleteBtn);
-            
-            add(buttonPanel, BorderLayout.CENTER);
+
+            // View button
+            viewButton = new JButton("View");
+            viewButton.setForeground(Color.WHITE);
+            viewButton.setBackground(UIConstants.INFO_COLOR);
+            viewButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            viewButton.setFocusPainted(false);
+            viewButton.setFont(UIConstants.SMALL_BUTTON_FONT);
+
+            // Edit button
+            editButton = new JButton("Edit");
+            editButton.setForeground(Color.WHITE);
+            editButton.setBackground(UIConstants.PRIMARY_COLOR);
+            editButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            editButton.setFocusPainted(false);
+            editButton.setFont(UIConstants.SMALL_BUTTON_FONT);
+
+            // Delete button
+            deleteButton = new JButton("Delete");
+            deleteButton.setForeground(Color.WHITE);
+            deleteButton.setBackground(UIConstants.DANGER_COLOR);
+            deleteButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            deleteButton.setFocusPainted(false);
+            deleteButton.setFont(UIConstants.SMALL_BUTTON_FONT);
+
+            add(viewButton);
+            add(editButton);
+            add(deleteButton);
+
+            // TODO: IMPLEMENT POLICY
+            Staff user = SessionManager.getCurrentUser();
+
+            deleteButton.setEnabled(!user.getRole().equals("admin"));
+
         }
         
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (isSelected) {
                 setBackground(table.getSelectionBackground());
-                buttonPanel.setBackground(table.getSelectionBackground());
             } else {
                 setBackground(table.getBackground());
-                buttonPanel.setBackground(table.getBackground());
             }
-            
+
+            int height = table.getRowHeight(row);
+            int buttonHeight = editButton.getPreferredSize().height;
+            int padding = Math.max(0, (height - buttonHeight) / 2);
+            setBorder(BorderFactory.createEmptyBorder(padding, 0, padding, 0));
+
             return this;
         }
     }
@@ -508,6 +411,12 @@ public class StaffPanel extends JPanel {
             panel.add(previewButton);
             panel.add(editButton);
             panel.add(deleteButton);
+
+            Staff user = SessionManager.getCurrentUser();
+
+            deleteButton.setEnabled(user.getRole().equals("admin"));
+            previewButton.setEnabled((user.getRole().equals("admin") || user.getId() == staffId));
+            editButton.setEnabled((user.getRole().equals("admin") || user.getId() == staffId));
         }
 
         // Create helper methods to minimize code in the constructor
@@ -533,7 +442,7 @@ public class StaffPanel extends JPanel {
             }
             
             try {
-                router.navigate("/staff/" + staffId);
+                router.navigate("/staffs/" + staffId);
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, "Navigation error", ex);
                 JOptionPane.showMessageDialog(panel, 
@@ -555,7 +464,7 @@ public class StaffPanel extends JPanel {
             }
             
             try {
-                router.navigate("/staff/edit/" + staffId);
+                router.navigate("/staffs/edit/" + staffId);
             } catch (Exception ex) {
                 LOGGER.log(Level.SEVERE, "Navigation error", ex);
                 JOptionPane.showMessageDialog(panel, 
@@ -589,12 +498,7 @@ public class StaffPanel extends JPanel {
                 return panel; // Return panel without setting staffId
             }
 
-            try {
-                staffId = (int) table.getValueAt(row, 0); // Get the ID from the first column
-            } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Error getting staff ID from table", ex);
-                staffId = -1; // Set invalid ID
-            }
+            staffId = (int) table.getValueAt(row, 0);
 
             panel.setBackground(table.getSelectionBackground());
             

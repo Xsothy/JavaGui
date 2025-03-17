@@ -5,9 +5,13 @@ import Model.ExpenseWithStaff;
 import Model.Staff;
 import Support.DB;
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -48,6 +52,7 @@ public class ExpenseRepository {
                 
                 return Optional.of(new Expense(
                     rs.getInt("id"),
+                    rs.getDate("date"),
                     rs.getString("name"),
                     rs.getString("description"),
                     rs.getBigDecimal("amount"),
@@ -78,6 +83,7 @@ public class ExpenseRepository {
                 while (rs.next()) {
                     expenseList.add(new Expense(
                         rs.getInt("id"),
+                        rs.getDate("date"),
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getBigDecimal("amount"),
@@ -107,12 +113,14 @@ public class ExpenseRepository {
         try {
             return db.execute(connection -> {
                 var stmt = connection.prepareStatement(
-                    "INSERT INTO expenses (name, description, amount, staff_id) VALUES (?, ?, ?, ?)"
+                    "INSERT INTO expenses (name, date, description, amount, staff_id) VALUES (?, ?, ?, ?, ?)"
                 );
+                java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
                 stmt.setString(1, name);
-                stmt.setString(2, description);
-                stmt.setDouble(3, amount);
-                stmt.setInt(4, staffId);
+                stmt.setDate(2, date);
+                stmt.setString(3, description);
+                stmt.setDouble(4, amount);
+                stmt.setInt(5, staffId);
                 
                 int rowsAffected = stmt.executeUpdate();
                 return rowsAffected > 0;
@@ -201,6 +209,7 @@ public class ExpenseRepository {
                 
                 Expense expense = new Expense(
                     rs.getInt("id"),
+                    rs.getDate("date"),
                     rs.getString("name"),
                     rs.getString("description"),
                     rs.getBigDecimal("amount"),
@@ -224,7 +233,100 @@ public class ExpenseRepository {
             return Optional.empty();
         }
     }
-    
+
+    /**
+
+     * Searches for expenses with staff information based on a search term.
+
+     *
+
+     * @param searchTerm The term to search for in expense name, description, or staff name
+
+     * @return A list of expenses with staff information matching the search term
+
+     */
+
+    public List<ExpenseWithStaff> searchExpensesWithStaff(String searchTerm) {
+
+        try {
+
+            return db.execute(connection -> {
+
+                var results = new ArrayList<ExpenseWithStaff>();
+
+                var stmt = connection.prepareStatement(
+
+                        "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.role " +
+
+                                "FROM expenses e " +
+
+                                "JOIN staff s ON e.staff_id = s.id " +
+
+                                "WHERE e.name LIKE ? OR s.name LIKE ?"
+
+                );
+
+                String likeParam = "%" + searchTerm + "%";
+
+                stmt.setString(1, likeParam);
+
+                stmt.setString(2, likeParam);
+
+                var rs = stmt.executeQuery();
+
+                while (rs.next()) {
+
+                    Expense expense = new Expense(
+
+                            rs.getInt("id"),
+
+                            rs.getDate("date"),
+
+                            rs.getString("name"),
+
+                            rs.getString("description"),
+
+                            rs.getBigDecimal("amount"),
+
+                            rs.getString("picture"),
+
+                            rs.getInt("staff_id")
+
+                    );
+
+                    Staff staff = new Staff(
+
+                            rs.getInt("s_id"),
+
+                            rs.getString("staff_name"),
+
+                            rs.getString("position"),
+
+                            rs.getString("username"),
+
+                            rs.getString("password"),
+
+                            rs.getString("role")
+
+                    );
+
+                    results.add(new ExpenseWithStaff(expense, staff));
+
+                }
+
+                return results;
+
+            });
+
+        } catch (SQLException ex) {
+
+            LOGGER.log(Level.SEVERE, "Error searching expenses with staff", ex);
+
+            return new ArrayList<>();
+
+        }
+
+    }
     /**
      * Retrieves all expenses with staff information.
      *
@@ -244,6 +346,7 @@ public class ExpenseRepository {
                 while (rs.next()) {
                     Expense expense = new Expense(
                         rs.getInt("id"),
+                        rs.getDate("date"),
                         rs.getString("name"),
                         rs.getString("description"),
                         rs.getBigDecimal("amount"),
@@ -270,57 +373,5 @@ public class ExpenseRepository {
             return new ArrayList<>();
         }
     }
-    
-    /**
-     * Searches for expenses with staff information based on a search term.
-     *
-     * @param searchTerm The term to search for in expense name, description, or staff name
-     * @return A list of expenses with staff information matching the search term
-     */
-    public List<ExpenseWithStaff> searchExpensesWithStaff(String searchTerm) {
-        try {
-            return db.execute(connection -> {
-                var results = new ArrayList<ExpenseWithStaff>();
-                var stmt = connection.prepareStatement(
-                    "SELECT e.*, s.id as s_id, s.name as staff_name, s.position, s.username, s.password, s.role " +
-                    "FROM expenses e " +
-                    "JOIN staff s ON e.staff_id = s.id " +
-                    "WHERE e.name LIKE ? OR e.description LIKE ? OR s.name LIKE ?"
-                );
-                
-                String likeParam = "%" + searchTerm + "%";
-                stmt.setString(1, likeParam);
-                stmt.setString(2, likeParam);
-                stmt.setString(3, likeParam);
-                var rs = stmt.executeQuery();
-                
-                while (rs.next()) {
-                    Expense expense = new Expense(
-                        rs.getInt("id"),
-                        rs.getString("name"),
-                        rs.getString("description"),
-                        rs.getBigDecimal("amount"),
-                        rs.getString("picture"),
-                        rs.getInt("staff_id")
-                    );
-                    
-                    Staff staff = new Staff(
-                        rs.getInt("s_id"),
-                        rs.getString("staff_name"),
-                        rs.getString("position"),
-                        rs.getString("username"),
-                        rs.getString("password"),
-                        rs.getString("role")
-                    );
-                    
-                    results.add(new ExpenseWithStaff(expense, staff));
-                }
-                
-                return results;
-            });
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Error searching expenses with staff", ex);
-            return new ArrayList<>();
-        }
-    }
+
 } 

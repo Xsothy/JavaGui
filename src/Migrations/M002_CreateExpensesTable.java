@@ -20,6 +20,7 @@ public class M002_CreateExpensesTable implements Migration {
     public void up(Connection conn) throws SQLException {
         String sql = "CREATE TABLE IF NOT EXISTS expenses (" +
                     "id INTEGER PRIMARY KEY AUTOINCREMENT," +
+                    "date DATE NOT NULL," +
                     "name TEXT NOT NULL," +
                     "description TEXT NOT NULL," +
                     "amount REAL NOT NULL," +

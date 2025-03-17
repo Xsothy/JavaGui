@@ -1,5 +1,7 @@
 package Support;
 
+import Components.NavigatePanel;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,8 +13,8 @@ import javax.swing.*;
  */
 public class Router {
     private static Router instance;
-    private final JPanel container;
-    private final Map<String, JPanel> staticRoutes;
+    private final NavigatePanel container;
+    private final Map<String, NavigatePanel> staticRoutes;
     private final List<Route> dynamicRoutes;
     private String currentRoute;
 
@@ -21,7 +23,7 @@ public class Router {
      *
      * @param container The container panel where views will be displayed
      */
-    public Router(JPanel container) {
+    public Router(NavigatePanel container) {
         this.container = container;
         this.staticRoutes = new HashMap<>();
         this.dynamicRoutes = new ArrayList<>();
@@ -34,7 +36,7 @@ public class Router {
      * @param container The container panel where views will be displayed
      * @return The Router instance
      */
-    public static Router getInstance(JPanel container) {
+    public static Router getInstance(NavigatePanel container) {
         if (instance == null || instance.container != container) {
             instance = new Router(container);
         }
@@ -47,7 +49,7 @@ public class Router {
      * @param path The path for the route
      * @param panel The panel to display for the route
      */
-    public void register(String path, JPanel panel) {
+    public void register(String path, NavigatePanel panel) {
         staticRoutes.put(path, panel);
     }
     
@@ -70,7 +72,7 @@ public class Router {
     public void navigate(String path) {
         // First check static routes
         if (staticRoutes.containsKey(path)) {
-            JPanel panel = staticRoutes.get(path);
+            NavigatePanel panel = staticRoutes.get(path);
             displayPanel(panel);
             currentRoute = path;
             return;
@@ -80,7 +82,7 @@ public class Router {
         for (Route route : dynamicRoutes) {
             if (route.matches(path)) {
                 Map<String, String> parameters = route.extractParameters(path);
-                JPanel panel = route.execute(parameters);
+                NavigatePanel panel = route.execute(parameters);
                 displayPanel(panel);
                 currentRoute = path;
                 return;
@@ -95,7 +97,8 @@ public class Router {
      * 
      * @param panel The panel to display
      */
-    private void displayPanel(JPanel panel) {
+    private void displayPanel(NavigatePanel panel) {
+        panel.rerender();
         container.removeAll();
         container.add(panel);
         container.revalidate();

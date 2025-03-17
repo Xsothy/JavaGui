@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 /**
  * A panel for creating and editing staff members.
  */
-public class StaffFormPanel extends JPanel {
+public class StaffFormPanel extends NavigatePanel {
     private final StaffController staffController;
     private Staff staff;
     private int staffId = 0;

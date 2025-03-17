@@ -2,12 +2,15 @@ package Components;
 
 import Controller.ExpenseController;
 import Model.ExpenseWithStaff;
+import Model.Staff;
 import Repository.ExpenseRepository;
 import Support.Router;
+import Support.SessionManager;
 import Support.UIConstants;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
+import java.text.DateFormat;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -18,12 +21,12 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Panel for displaying and managing expenses.
  */
-public class ExpensePanel extends JPanel {
+public class ExpensePanel extends NavigatePanel {
     private final ExpenseController expenseController;
     private final Router router;
     private JTable expenseTable;
     private JTextField searchField;
-    
+    private JComboBox<String> durationComboBox; // Added ComboBox
     /**
      * Creates a new ExpensePanel.
      * 
@@ -33,11 +36,16 @@ public class ExpensePanel extends JPanel {
         this.expenseController = new ExpenseController();
         this.router = router;
 
-
         initComponents();
         loadExpenses();
     }
-    
+
+    @Override
+    public void rerender()
+    {
+        loadExpenses();
+    }
+
     /**
      * Initialize the components.
      */
@@ -82,7 +90,17 @@ public class ExpensePanel extends JPanel {
         JPanel actionsPanel = new JPanel();
         actionsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         actionsPanel.setBackground(Color.WHITE);
-        
+
+        String[] durationOptions = {"All", "This Week", "Last Week", "This Month", "Last Month", "This Year"}; // Added options
+        durationComboBox = new JComboBox<>(durationOptions);
+        durationComboBox.setFont(UIConstants.TABLE_CONTENT_FONT);
+        durationComboBox.setBackground(Color.WHITE);
+        durationComboBox.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(0,0,0,0)
+        ));
+        actionsPanel.add(durationComboBox);
+
         // Search field with icon
         JPanel searchPanel = new JPanel();
         searchPanel.setLayout(new BorderLayout());
@@ -92,7 +110,7 @@ public class ExpensePanel extends JPanel {
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
         
-        JLabel searchIcon = new JLabel("🔍");
+        JLabel searchIcon = new JLabel("");
         searchIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
         
@@ -181,14 +199,19 @@ public class ExpensePanel extends JPanel {
         searchField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                String searchText = searchField.getText().trim();
-                if (searchText.isEmpty()) {
-                    loadExpenses();
-                } else {
-                    searchExpenses(searchText);
-                }
+                filterExpenses();
             }
         });
+
+
+        // add listener to ducation
+        durationComboBox.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                filterExpenses();
+            }
+        });
+
     }
     
     /**
@@ -198,14 +221,13 @@ public class ExpensePanel extends JPanel {
         List<ExpenseWithStaff> expenses = expenseController.getAllExpensesWithStaff();
         updateTableModel(expenses);
     }
-    
-    /**
-     * Search for expenses matching the search text.
-     * 
-     * @param searchText The text to search for
-     */
-    private void searchExpenses(String searchText) {
-        List<ExpenseWithStaff> expenses = expenseController.searchExpensesWithStaff(searchText);
+
+
+    private void filterExpenses()
+    {
+        String searchText = searchField.getText().trim();
+        String selectedDuration = (String) durationComboBox.getSelectedItem();
+        List<ExpenseWithStaff> expenses = expenseController.filterExpense(searchText, selectedDuration);
         updateTableModel(expenses);
     }
     
@@ -216,7 +238,7 @@ public class ExpensePanel extends JPanel {
      */
     private void updateTableModel(List<ExpenseWithStaff> expenses) {
         // Create the table model
-        String[] columnNames = {"ID", "Name", "Description", "Amount", "Staff", "Actions"};
+        String[] columnNames = {"ID", "Name", "Date", "Amount", "Staff", "Actions"};
         Object[][] data = new Object[expenses.size()][columnNames.length];
         
         // Populate the data
@@ -224,7 +246,7 @@ public class ExpensePanel extends JPanel {
             ExpenseWithStaff expense = expenses.get(i);
             data[i][0] = expense.getExpense().getId();
             data[i][1] = expense.getExpense().getName();
-            data[i][2] = expense.getExpense().getDescription();
+            data[i][2] = DateFormat.getDateInstance().format(expense.getExpense().getDate());
             data[i][3] = String.format("$%.2f", expense.getExpense().getAmount());
             data[i][4] = expense.getStaffName();
             data[i][5] = ""; // Will be replaced with buttons
@@ -244,9 +266,9 @@ public class ExpensePanel extends JPanel {
         if (totalWidth > 0) {
             expenseTable.getColumnModel().getColumn(0).setPreferredWidth((int)(totalWidth * 0.05));  // ID (5%)
             expenseTable.getColumnModel().getColumn(1).setPreferredWidth((int)(totalWidth * 0.20));  // Name (20%)
-            expenseTable.getColumnModel().getColumn(2).setPreferredWidth((int)(totalWidth * 0.30));  // Description (30%)
-            expenseTable.getColumnModel().getColumn(3).setPreferredWidth((int)(totalWidth * 0.15));  // Amount (15%)
-            expenseTable.getColumnModel().getColumn(4).setPreferredWidth((int)(totalWidth * 0.15));  // Staff (15%)
+            expenseTable.getColumnModel().getColumn(2).setPreferredWidth((int)(totalWidth * 0.30));  // Date (20%)
+            expenseTable.getColumnModel().getColumn(3).setPreferredWidth((int)(totalWidth * 0.15));  // Amount (20%)
+            expenseTable.getColumnModel().getColumn(4).setPreferredWidth((int)(totalWidth * 0.15));  // Staff (20%)
             expenseTable.getColumnModel().getColumn(5).setPreferredWidth((int)(totalWidth * 0.15));  // Actions (15%)
         }
         
@@ -290,6 +312,15 @@ public class ExpensePanel extends JPanel {
             
             add(editButton);
             add(deleteButton);
+
+            Staff user = SessionManager.getCurrentUser();
+
+            if(!user.getRole().equals("admin"))
+            {
+                deleteButton.setEnabled(false);
+                editButton.setEnabled(false);
+            }
+
         }
         
         @Override
@@ -393,6 +424,14 @@ public class ExpensePanel extends JPanel {
             
             panel.add(editButton);
             panel.add(deleteButton);
+
+            Staff user = SessionManager.getCurrentUser();
+
+            if(!user.getRole().equals("admin"))
+            {
+                deleteButton.setEnabled(false);
+                editButton.setEnabled(false);
+            }
         }
         
         @Override

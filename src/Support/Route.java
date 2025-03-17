@@ -1,5 +1,7 @@
 package Support;
 
+import Components.NavigatePanel;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -93,7 +95,7 @@ public class Route {
      * @param parameters The parameters to pass to the handler
      * @return The panel returned by the handler
      */
-    public JPanel execute(Map<String, String> parameters) {
+    public NavigatePanel execute(Map<String, String> parameters) {
         return handler.handle(parameters);
     }
     
@@ -108,6 +110,6 @@ public class Route {
          * @param parameters The parameters extracted from the path
          * @return The panel to display
          */
-        JPanel handle(Map<String, String> parameters);
+        NavigatePanel handle(Map<String, String> parameters);
     }
 } 

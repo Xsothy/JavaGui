@@ -1,12 +1,14 @@
 package Model;
 
 import java.math.BigDecimal;
+import java.util.Date;
 
 /**
  * Model class representing an expense entry.
  */
 public class Expense {
     private int id;
+    private Date date;
     private String name;
     private String description;
     private BigDecimal amount;
@@ -23,8 +25,9 @@ public class Expense {
      * @param picture Path to the expense receipt/picture (if any)
      * @param staffId The ID of the staff member associated with this expense
      */
-    public Expense(int id, String name, String description, BigDecimal amount, String picture, int staffId) {
+    public Expense(int id, Date date, String name, String description, BigDecimal amount, String picture, int staffId) {
         this.id = id;
+        this.date = date;
         this.name = name;
         this.description = description;
         this.amount = amount;
@@ -48,6 +51,25 @@ public class Expense {
      */
     public void setId(int id) {
         this.id = id;
+    }
+
+
+    /**
+     * Get the expense ID.
+     *
+     * @return The expense ID
+     */
+    public Date getDate() {
+        return date;
+    }
+
+    /**
+     * Set the expense ID.
+     *
+     * @param date The new expense ID
+     */
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     /**

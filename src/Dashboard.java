@@ -1,7 +1,4 @@
-import Components.ExpenseFormPanel;
-import Components.ExpensePanel;
-import Components.StaffFormPanel;
-import Components.StaffPanel;
+import Components.*;
 import Controller.ExpenseController;
 import Controller.StaffController;
 import Model.Staff;
@@ -16,7 +13,7 @@ import javax.swing.*;
  * Main dashboard of the application.
  */
 public class Dashboard extends javax.swing.JFrame {
-    private JPanel contentPanel;
+    private NavigatePanel contentPanel;
     private Router router;
     private JButton btnStaff;
     private JButton btnExpense;
@@ -126,7 +123,7 @@ public class Dashboard extends javax.swing.JFrame {
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
         
         // Create the content panel
-        contentPanel = new JPanel();
+        contentPanel = new NavigatePanel();
         contentPanel.setLayout(new BorderLayout());
         contentPanel.setBackground(Color.WHITE);
         

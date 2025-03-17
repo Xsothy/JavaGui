@@ -313,7 +313,7 @@ public class StaffRepository {
             
             // Then, get all expenses for this staff member
             PreparedStatement expensesStmt = connection.prepareStatement(
-                    "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ? ORDER BY id DESC"
+                    "SELECT id, date, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ? ORDER BY id DESC"
             );
             expensesStmt.setInt(1, staffId);
             ResultSet expensesRs = expensesStmt.executeQuery();
@@ -323,6 +323,7 @@ public class StaffRepository {
             while (expensesRs.next()) {
                 Model.Expense expense = new Model.Expense(
                         expensesRs.getInt("id"),
+                        expensesRs.getDate("date"),
                         expensesRs.getString("name"),
                         expensesRs.getString("description"),
                         expensesRs.getBigDecimal("amount"),
@@ -353,7 +354,7 @@ public class StaffRepository {
             // First, get all staff members
             Statement staffStmt = connection.createStatement();
             ResultSet staffRs = staffStmt.executeQuery(
-                    "SELECT id, name, position, username, password, role FROM staff ORDER BY id"
+                    "SELECT id, date, name, position, username, password, role FROM staff ORDER BY id"
             );
             
             List<StaffWithExpenses> staffWithExpensesList = new ArrayList<>();
@@ -367,7 +368,6 @@ public class StaffRepository {
                         staffRs.getString("password"),
                         staffRs.getString("role")
                 );
-                
                 // Then, get all expenses for this staff member
                 PreparedStatement expensesStmt = connection.prepareStatement(
                         "SELECT id, name, description, amount, picture, staff_id FROM expenses WHERE staff_id = ? ORDER BY id DESC"
@@ -380,6 +380,7 @@ public class StaffRepository {
                 while (expensesRs.next()) {
                     Model.Expense expense = new Model.Expense(
                             expensesRs.getInt("id"),
+                            expensesRs.getDate("date"),
                             expensesRs.getString("name"),
                             expensesRs.getString("description"),
                             expensesRs.getBigDecimal("amount"),

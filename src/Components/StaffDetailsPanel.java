@@ -17,7 +17,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 /**
  * Panel for displaying staff details with their expenses.
  */
-public class StaffDetailsPanel extends JPanel {
+public class StaffDetailsPanel extends NavigatePanel {
     private final StaffController staffController;
     private final Staff staff;
     private final Router router;
@@ -310,7 +310,7 @@ public class StaffDetailsPanel extends JPanel {
         table.getTableHeader().setForeground(Color.WHITE);
         table.getTableHeader().setPreferredSize(new Dimension(table.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT));
 
-        // Set relative column widths as percentages
+//        // Set relative column widths as percentages
 //        int totalWidth = table.getParent().getWidth();
 //        if (totalWidth > 0) {
 //            table.getColumnModel().getColumn(0).setPreferredWidth((int)(totalWidth * 0.10));  // ID (10%)
