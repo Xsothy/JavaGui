@@ -235,8 +235,6 @@ public class SignUp extends javax.swing.JFrame {
             new Login().setVisible(true);
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error creating staff: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }//GEN-LAST:event_btnSaveActionPerformed
 

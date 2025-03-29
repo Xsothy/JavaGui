@@ -1,4 +1,4 @@
-package Components;
+package View;
 
 import Controller.ExpenseController;
 import Controller.StaffController;
@@ -24,15 +24,13 @@ public class ExpenseFormPanel extends NavigatePanel {
     private final Router router;
     
     private int expenseId = 0;
-    private boolean isEditMode;
-    private String selectedImagePath;
-    
+    private final boolean isEditMode;
+
     // Form components
     private JTextField txtName;
     private JTextArea txtDescription;
     private JTextField txtAmount;
     private JComboBox<StaffComboItem> cmbStaff;
-    private JButton btnBrowse;
     private JLabel lblImage;
     private JButton btnSave;
     private JButton btnCancel;
@@ -64,7 +62,7 @@ public class ExpenseFormPanel extends NavigatePanel {
         this.router = router;
         this.isEditMode = true;
         this.expenseId = expense.getId();
-        this.selectedImagePath = expense.getPicture();
+        String selectedImagePath = expense.getPicture();
         
         initComponents();
         loadStaffComboBox();
@@ -220,8 +218,8 @@ public class ExpenseFormPanel extends NavigatePanel {
         lblImage.setHorizontalAlignment(JLabel.CENTER);
         lblImage.setPreferredSize(new Dimension(200, 200));
         lblImage.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        
-        btnBrowse = new JButton("Browse");
+
+        JButton btnBrowse = new JButton("Browse");
         btnBrowse.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
         imagePanel.add(lblImage, BorderLayout.CENTER);
@@ -327,23 +325,16 @@ public class ExpenseFormPanel extends NavigatePanel {
      * Load staff members into the staff combo box.
      */
     private void loadStaffComboBox() {
-        try {
-            List<Staff> staffList = staffController.getAllStaff();
-            cmbStaff.removeAllItems();
-            
-            for (Staff staff : staffList) {
-                // TODO: Implement Permission
+        List<Staff> staffList = staffController.getAllStaff();
+        cmbStaff.removeAllItems();
 
-                Staff user = SessionManager.getCurrentUser();
+        for (Staff staff : staffList) {
 
-                if (user.getId() == staff.getId() || user.getRole().equalsIgnoreCase("admin")) {
-                    cmbStaff.addItem(new StaffComboItem(staff.getId(), staff.getName()));
-                }
+            Staff user = SessionManager.getCurrentUser();
+
+            if (user.getId() == staff.getId() || user.getRole().equalsIgnoreCase("admin")) {
+                cmbStaff.addItem(new StaffComboItem(staff.getId(), staff.getName()));
             }
-        } catch (SQLException ex) {
-            Logger.getLogger(ExpenseFormPanel.class.getName()).log(Level.SEVERE, "Error loading staff list", ex);
-            JOptionPane.showMessageDialog(this, "Error loading staff list: " + ex.getMessage(), 
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     

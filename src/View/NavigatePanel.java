@@ -1,4 +1,4 @@
-package Components;
+package View;
 
 import javax.swing.*;
 
@@ -9,7 +9,7 @@ public class NavigatePanel extends JPanel {
         super();
     }
 
-    public void rerender(
+    public void render(
     )
     {
     }

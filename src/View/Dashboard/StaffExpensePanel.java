@@ -1,24 +1,20 @@
-package Components;
+package View.Dashboard;
 
 import Controller.StaffController;
 import Model.Staff;
-import Repository.StaffRepository;
-import Repository.ExpenseRepository;
-import Model.Expense;
+import Model.StaffWithExpenses;
+import View.NavigatePanel;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * A panel for displaying a staff member with their expenses.
  */
 public class StaffExpensePanel extends NavigatePanel {
     private final StaffController staffController;
-    private final StaffRepository.StaffWithExpenses staffWithExpenses;
+    private final StaffWithExpenses staffWithExpenses;
     private final JTable expenseTable;
     
     /**
@@ -26,7 +22,7 @@ public class StaffExpensePanel extends NavigatePanel {
      * 
      * @param staffWithExpenses The staff member with expenses to display
      */
-    public StaffExpensePanel(StaffRepository.StaffWithExpenses staffWithExpenses) {
+    public StaffExpensePanel(StaffWithExpenses staffWithExpenses) {
         this.staffController = new StaffController();
         this.staffWithExpenses = staffWithExpenses;
         
@@ -120,8 +116,7 @@ public class StaffExpensePanel extends NavigatePanel {
      * @param staffId The ID of the staff member to refresh
      */
     public void refresh(int staffId) {
-        try {
-            StaffRepository.StaffWithExpenses updatedStaffWithExpenses = 
+            StaffWithExpenses updatedStaffWithExpenses =
                     staffController.getStaffWithExpensesById(staffId)
                     .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
             
@@ -147,10 +142,6 @@ public class StaffExpensePanel extends NavigatePanel {
             
             revalidate();
             repaint();
-        } catch (SQLException | IllegalArgumentException ex) {
-            Logger.getLogger(StaffExpensePanel.class.getName()).log(Level.SEVERE, "Error refreshing staff data", ex);
-            JOptionPane.showMessageDialog(this, "Error refreshing staff data: " + ex.getMessage(), 
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
+
     }
 } 

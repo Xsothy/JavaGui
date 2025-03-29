@@ -1,12 +1,11 @@
 package Support;
 
-import Components.NavigatePanel;
+import View.NavigatePanel;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JPanel;
 
 /**
  * Route class for handling dynamic routes with path parameters.

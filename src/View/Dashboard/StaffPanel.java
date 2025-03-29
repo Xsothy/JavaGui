@@ -1,16 +1,16 @@
-package Components;
+package View.Dashboard;
 
 import Controller.StaffController;
 import Model.Staff;
 import Support.Router;
 import Support.SessionManager;
 import Support.UIConstants;
+import View.DashboardPanel;
+import View.NavigatePanel;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.SQLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -18,40 +18,31 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Panel for viewing and managing staff members.
  */
-public class StaffPanel extends NavigatePanel {
-    private static final Logger LOGGER = Logger.getLogger(StaffPanel.class.getName());
+public class StaffPanel extends DashboardPanel {
     private final StaffController staffController;
-    private final Router router;
     private JTable staffTable;
     private JTextField searchField;
 
-    /**
-     * Creates a new StaffPanel.
-     *
-     * @param router The router for navigation
-     */
-    public StaffPanel(Router router) {
-        this.staffController = new StaffController();
-        this.router = router;
 
-        initComponents();
-        loadStaff();
+    public StaffPanel() {
+        super();
+        this.staffController = new StaffController();
     }
 
 
     @Override
-    public void rerender()
+    public void render()
     {
+        super.render();
         loadStaff();
     }
 
-    /**
-     * Initialize the components.
-     */
-    private void initComponents() {
-        setLayout(new BorderLayout(0, 0));
-        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        setBackground(Color.WHITE);
+
+    public NavigatePanel getContentPanel() {
+        NavigatePanel contentPanel = new NavigatePanel();
+        contentPanel.setLayout(new BorderLayout(0, 0));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        contentPanel.setBackground(Color.WHITE);
 
         // Create header panel with title and add button
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -126,7 +117,9 @@ public class StaffPanel extends NavigatePanel {
 
         // TODO:: Implement Policy
         Staff user = SessionManager.getCurrentUser();
-        addButton.setEnabled(user.getRole().equals("admin"));
+        if (user != null) {
+            addButton.setEnabled(user.getRole().equals("admin"));
+        }
 
 
         // Add hover effect
@@ -142,7 +135,7 @@ public class StaffPanel extends NavigatePanel {
             }
         });
 
-        addButton.addActionListener(e -> router.navigate("/staffs/add"));
+        addButton.addActionListener(e -> Router.navigate("dashboard/staffs/add"));
 
         actionsPanel.add(searchPanel);
         actionsPanel.add(addButton);
@@ -150,12 +143,12 @@ public class StaffPanel extends NavigatePanel {
         headerPanel.add(titlePanel, BorderLayout.WEST);
         headerPanel.add(actionsPanel, BorderLayout.EAST);
 
-        add(headerPanel, BorderLayout.NORTH);
+        contentPanel.add(headerPanel, BorderLayout.NORTH);
 
         // Content panel with table
-        JPanel contentPanel = new JPanel(new BorderLayout());
-        contentPanel.setBackground(Color.WHITE);
-        contentPanel.setBorder(BorderFactory.createEmptyBorder(
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBorder(BorderFactory.createEmptyBorder(
                 UIConstants.SECTION_SPACING,
                 UIConstants.CONTENT_PADDING,
                 UIConstants.CONTENT_PADDING,
@@ -185,9 +178,9 @@ public class StaffPanel extends NavigatePanel {
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
 
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
 
-        add(contentPanel, BorderLayout.CENTER);
+        contentPanel.add(tablePanel, BorderLayout.CENTER);
 
         // Add search listener
         searchField.addKeyListener(new KeyAdapter() {
@@ -201,21 +194,15 @@ public class StaffPanel extends NavigatePanel {
                 }
             }
         });
+        return contentPanel;
     }
 
     /**
      * Load the staff from the database.
      */
     private void loadStaff() {
-        try {
-            List<Staff> staff = staffController.getAllStaff();
-            updateTableModel(staff);
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Error loading staff data: " + ex.getMessage(),
-                    "Database Error",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+        List<Staff> staff = staffController.getAllStaff();
+        updateTableModel(staff);
     }
 
     /**
@@ -224,27 +211,22 @@ public class StaffPanel extends NavigatePanel {
      * @param searchText The text to search for
      */
     private void searchStaff(String searchText) {
-        try {
-            List<Staff> staffList = staffController.getAllStaff();
+        List<Staff> staffList = staffController.getAllStaff();
 
-            if (searchText != null && !searchText.trim().isEmpty()) {
-                String searchTerm = searchText.toLowerCase().trim();
+        if (searchText != null && !searchText.trim().isEmpty()) {
+            String searchTerm = searchText.toLowerCase().trim();
 
-                // Filter the staff list based on the search term
-                staffList = staffList.stream()
-                        .filter(staff ->
-                                staff.getName().toLowerCase().contains(searchTerm) ||
-                                        staff.getPosition().toLowerCase().contains(searchTerm) ||
-                                        staff.getUserName().toLowerCase().contains(searchTerm) ||
-                                        staff.getRole().toLowerCase().contains(searchTerm))
-                        .toList();
-            }
-
-            updateTableModel(staffList);
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Database error", ex);
-            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+            // Filter the staff list based on the search term
+            staffList = staffList.stream()
+                    .filter(staff ->
+                            staff.getName().toLowerCase().contains(searchTerm) ||
+                                    staff.getPosition().toLowerCase().contains(searchTerm) ||
+                                    staff.getUserName().toLowerCase().contains(searchTerm) ||
+                                    staff.getRole().toLowerCase().contains(searchTerm))
+                    .toList();
         }
+
+        updateTableModel(staffList);
     }
 
     /**
@@ -311,9 +293,6 @@ public class StaffPanel extends NavigatePanel {
             }
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, "Invalid input: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException ex) {
-            LOGGER.log(Level.SEVERE, "Database error", ex);
-            JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -442,10 +421,9 @@ public class StaffPanel extends NavigatePanel {
             }
             
             try {
-                router.navigate("/staffs/" + staffId);
+                Router.navigate("dashboard/staffs/" + staffId);
             } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Navigation error", ex);
-                JOptionPane.showMessageDialog(panel, 
+                JOptionPane.showMessageDialog(panel,
                     "Error navigating to staff details: " + ex.getMessage(), 
                     "Navigation Error", 
                     JOptionPane.ERROR_MESSAGE);
@@ -464,10 +442,9 @@ public class StaffPanel extends NavigatePanel {
             }
             
             try {
-                router.navigate("/staffs/edit/" + staffId);
+                Router.navigate("dashboard/staffs/edit/" + staffId);
             } catch (Exception ex) {
-                LOGGER.log(Level.SEVERE, "Navigation error", ex);
-                JOptionPane.showMessageDialog(panel, 
+                JOptionPane.showMessageDialog(panel,
                     "Error navigating to staff edit: " + ex.getMessage(), 
                     "Navigation Error", 
                     JOptionPane.ERROR_MESSAGE);

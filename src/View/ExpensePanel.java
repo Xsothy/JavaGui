@@ -1,19 +1,15 @@
-package Components;
+package View;
 
 import Controller.ExpenseController;
 import Model.ExpenseWithStaff;
 import Model.Staff;
-import Repository.ExpenseRepository;
 import Support.Router;
 import Support.SessionManager;
 import Support.UIConstants;
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -41,7 +37,7 @@ public class ExpensePanel extends NavigatePanel {
     }
 
     @Override
-    public void rerender()
+    public void render()
     {
         loadExpenses();
     }

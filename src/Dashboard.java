@@ -1,4 +1,4 @@
-import Components.*;
+import View.*;
 import Controller.ExpenseController;
 import Controller.StaffController;
 import Model.Staff;
@@ -26,7 +26,7 @@ public class Dashboard extends javax.swing.JFrame {
      */
     public Dashboard() {
         initComponents();
-        setupRouter();
+//        setupRouter();
         
         // Show staff panel by default
         btnStaff.doClick();
@@ -149,7 +149,6 @@ public class Dashboard extends javax.swing.JFrame {
         button.setMaximumSize(new Dimension(180, 40));
         button.setPreferredSize(new Dimension(180, 40));
         
-        // Add hover effect
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -202,27 +201,26 @@ public class Dashboard extends javax.swing.JFrame {
     /**
      * Set up the router for navigation.
      */
-    private void setupRouter() {
-        router = new Router(contentPanel);
-        
-        // Register routes
-        router.register("/staffs", new StaffPanel(router));
-        router.register("/staffs/{id}", parameters -> {
-            return new StaffController().show(parameters, router);
-        });
-        router.register("/staffs/add", new StaffFormPanel(router));
-        router.register("/staffs/edit/{id}", parameters -> {
-            return new StaffController().edit(parameters, router);
-        });
-        router.register("/expenses", new ExpensePanel(router));
-        router.register("/expenses/add", new ExpenseFormPanel(router));
-        router.register("/expenses/edit/{id}", parameters -> {
-            return new ExpenseController().edit(parameters, router);
-        });
-        
-        // Default route
-        router.navigate("/staffs");
-    }
+//    private void setupRouter() {
+//        router = new Router(contentPanel);
+//
+//        router.register("/staffs", new StaffPanel(router));
+//        router.register("/staffs/{id}", parameters -> {
+//            return new StaffController().show(parameters, router);
+//        });
+//        router.register("/staffs/add", new StaffFormPanel(router));
+//        router.register("/staffs/edit/{id}", parameters -> {
+//            return new StaffController().edit(parameters, router);
+//        });
+//
+//        router.register("/expenses", new ExpensePanel(router));
+//        router.register("/expenses/add", new ExpenseFormPanel(router));
+//        router.register("/expenses/edit/{id}", parameters -> {
+//            return new ExpenseController().edit(parameters, router);
+//        });
+//
+//        router.navigate("/staffs");
+//    }
 
     /**
      * @param args the command line arguments

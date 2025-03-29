@@ -1,12 +1,12 @@
-package Components;
+package View.Dashboard;
 
 import Controller.StaffController;
 import Model.Staff;
 import Support.Router;
+import View.NavigatePanel;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;

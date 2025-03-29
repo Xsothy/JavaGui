@@ -1,55 +1,43 @@
 package Support;
 
-import Components.NavigatePanel;
+import View.NavigatePanel;
 
+import javax.swing.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.swing.*;
 
 /**
  * Router class for handling navigation between different views.
  */
 public class Router {
     private static Router instance;
-    private final NavigatePanel container;
-    private final Map<String, NavigatePanel> staticRoutes;
-    private final List<Route> dynamicRoutes;
-    private String currentRoute;
+    private final JFrame container;
+    private static final Map<String, NavigatePanel> staticRoutes = new HashMap<>();
+    private static final List<Route> dynamicRoutes = new ArrayList<>();
+    private static String currentRoute = "";
 
     /**
      * Private constructor to enforce singleton pattern.
      *
      * @param container The container panel where views will be displayed
      */
-    public Router(NavigatePanel container) {
+    public Router(JFrame container) {
         this.container = container;
-        this.staticRoutes = new HashMap<>();
-        this.dynamicRoutes = new ArrayList<>();
-        this.currentRoute = "";
     }
 
-    /**
-     * Get the singleton instance of the Router.
-     *
-     * @param container The container panel where views will be displayed
-     * @return The Router instance
-     */
-    public static Router getInstance(NavigatePanel container) {
-        if (instance == null || instance.container != container) {
-            instance = new Router(container);
-        }
+    public static Router getInstance() {
         return instance;
     }
 
-    /**
-     * Register a static route with the Router.
-     *
-     * @param path The path for the route
-     * @param panel The panel to display for the route
-     */
-    public void register(String path, NavigatePanel panel) {
+    public static void initialize(JFrame container) {
+        if (instance == null || instance.container != container) {
+            instance = new Router(container);
+        }
+    }
+
+    public static void register(String path, NavigatePanel panel) {
         staticRoutes.put(path, panel);
     }
     
@@ -59,7 +47,7 @@ public class Router {
      * @param pattern The route pattern, may include {paramName} path parameters
      * @param handler The handler to execute when the route is matched
      */
-    public void register(String pattern, Route.RouteHandler handler) {
+    public static void register(String pattern, Route.RouteHandler handler) {
         dynamicRoutes.add(new Route(pattern, handler));
     }
 
@@ -69,11 +57,10 @@ public class Router {
      * @param path The path to navigate to
      * @throws IllegalArgumentException If the path is not registered
      */
-    public void navigate(String path) {
-        // First check static routes
+    public static void navigate(String path) {
         if (staticRoutes.containsKey(path)) {
             NavigatePanel panel = staticRoutes.get(path);
-            displayPanel(panel);
+            getInstance().displayPanel(panel);
             currentRoute = path;
             return;
         }
@@ -83,26 +70,30 @@ public class Router {
             if (route.matches(path)) {
                 Map<String, String> parameters = route.extractParameters(path);
                 NavigatePanel panel = route.execute(parameters);
-                displayPanel(panel);
+                getInstance().displayPanel(panel);
                 currentRoute = path;
                 return;
             }
         }
-        
         throw new IllegalArgumentException("Route not found: " + path);
     }
-    
+
     /**
      * Display a panel in the container.
      * 
      * @param panel The panel to display
      */
     private void displayPanel(NavigatePanel panel) {
-        panel.rerender();
-        container.removeAll();
-        container.add(panel);
-        container.revalidate();
-        container.repaint();
+        container.setVisible(false);
+        panel.render();
+        container.setContentPane(panel);
+        container.pack();
+        container.setLocationRelativeTo(null);
+        container.setVisible(true);
+    }
+
+    public static JFrame getContainer() {
+        return instance.container;
     }
 
     /**
@@ -110,7 +101,7 @@ public class Router {
      *
      * @return The current route
      */
-    public String getCurrentRoute() {
+    public static String getCurrentRoute() {
         return currentRoute;
     }
 

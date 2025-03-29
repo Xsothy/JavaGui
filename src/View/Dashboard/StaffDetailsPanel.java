@@ -1,23 +1,23 @@
-package Components;
+package View.Dashboard;
 
 import Controller.StaffController;
 import Model.ExpenseWithStaff;
 import Model.Staff;
-import Repository.StaffRepository;
+import Model.StaffWithExpenses;
 import Support.Router;
 import Support.UIConstants;
+import View.DashboardPanel;
+import View.NavigatePanel;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 
 /**
  * Panel for displaying staff details with their expenses.
  */
-public class StaffDetailsPanel extends NavigatePanel {
+public class StaffDetailsPanel extends DashboardPanel {
     private final StaffController staffController;
     private final Staff staff;
     private final Router router;
@@ -29,6 +29,7 @@ public class StaffDetailsPanel extends NavigatePanel {
      * @param router The router for navigation
      */
     public StaffDetailsPanel(Staff staff, Router router) {
+        super();
         this.staffController = new StaffController();
         this.staff = staff;
         this.router = router;
@@ -45,7 +46,6 @@ public class StaffDetailsPanel extends NavigatePanel {
         setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         setBackground(Color.WHITE);
 
-        // Add a loading label initially
         JLabel loadingLabel = new JLabel("Loading staff data...");
         loadingLabel.setHorizontalAlignment(JLabel.CENTER);
         loadingLabel.setFont(UIConstants.TITLE_FONT);
@@ -57,8 +57,7 @@ public class StaffDetailsPanel extends NavigatePanel {
      * Load the staff data.
      */
     private void loadStaffData() {
-        try {
-            StaffRepository.StaffWithExpenses staffWithExpenses =
+            StaffWithExpenses staffWithExpenses =
                     staffController.getStaffWithExpensesById(staff.getId())
                     .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
 
@@ -131,11 +130,7 @@ public class StaffDetailsPanel extends NavigatePanel {
 
             revalidate();
             repaint();
-        } catch (SQLException | IllegalArgumentException ex) {
-            Logger.getLogger(StaffDetailsPanel.class.getName()).log(Level.SEVERE, "Error loading staff data", ex);
-            JOptionPane.showMessageDialog(this, "Error loading staff data: " + ex.getMessage(),
-                    "Database Error", JOptionPane.ERROR_MESSAGE);
-        }
+
     }
 
     /**
@@ -278,7 +273,7 @@ public class StaffDetailsPanel extends NavigatePanel {
      * @param staffWithExpenses The staff member with expenses
      * @return The expense table
      */
-    private JTable createExpenseTable(StaffRepository.StaffWithExpenses staffWithExpenses) {
+    private JTable createExpenseTable(StaffWithExpenses staffWithExpenses) {
         // Create the table model
         String[] columnNames = {"ID", "Name", "Description", "Amount"};
         Object[][] data = new Object[staffWithExpenses.getExpenses().size()][columnNames.length];

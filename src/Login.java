@@ -7,7 +7,7 @@ import javax.swing.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.util.Optional;
-
+import Exception.*;
 /**
  *
  * @author Login
@@ -193,7 +193,7 @@ public class Login extends javax.swing.JFrame {
         
         try {
             // Validate login
-            staffController.validateLogin(username, password);
+            staffController.login(username, password);
             
             // If login successful, get the staff member and set it as the current user
             Optional<Staff> staffOpt = staffController.getStaffByUserName(username);
@@ -210,8 +210,8 @@ public class Login extends javax.swing.JFrame {
             }
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this, "Error logging in: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Database error: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (ValidateException e) {
+            throw new RuntimeException(e);
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 

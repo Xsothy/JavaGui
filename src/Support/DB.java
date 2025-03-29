@@ -40,13 +40,7 @@ public class DB
             return instance;
       }
 
-      /**
-       * Get database connection with error handling
-       * 
-       * @return The database connection
-       * @throws SQLException If a database error occurs
-       * @throws IllegalStateException If connection parameters are not initialized
-       */
+
       public Connection getConnection() throws SQLException, IllegalStateException {
             // Check if we already have a valid connection
             if (connection != null && !connection.isClosed()) {
@@ -63,11 +57,7 @@ public class DB
             return connection;
       }
 
-      /**
-       * Close the database connection safely
-       * 
-       * @throws SQLException If a database error occurs
-       */
+
       public void closeConnection() throws SQLException {
             if (connection != null && !connection.isClosed()) {
                   connection.close();
@@ -75,22 +65,21 @@ public class DB
             }
       }
 
-      /**
-       * Execute a database operation with automatic error handling
-       * 
-       * @param operation The database operation to execute
-       * @return The result of the operation
-       * @throws SQLException If a database error occurs
-       * @throws IllegalStateException If connection parameters are not initialized
-       */
-      public <T> T execute(DatabaseOperation<T> operation) throws SQLException, IllegalStateException {
-            Connection conn = getConnection();
-            return operation.execute(conn);
+      public static <T> T execute(DatabaseOperation<T> operation) throws SQLException {
+            Connection conn = getInstance().getConnection();
+            T result = operation.execute(conn);
+            getInstance().closeConnection();
+            return result;
       }
 
-      /**
-       * Functional interface for database operations
-       */
+      public static <T> T unsafeExecute(DatabaseOperation<T> operation) {
+          try {
+              return execute(operation);
+          } catch (SQLException e) {
+              throw new RuntimeException(e);
+          }
+      }
+
       @FunctionalInterface
       public interface DatabaseOperation<T> {
             T execute(Connection connection) throws SQLException;

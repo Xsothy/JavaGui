@@ -19,14 +19,14 @@ The application follows a clean architecture pattern with the following structur
 - `Repository` - Contains repository classes for data access
 - `Controller` - Contains controllers for business logic
 - `Support` - Contains utility classes and infrastructure
-- `Components` - Contains UI components for different views
+- `View` - Contains UI components for different views
 
 ### UI Component Structure
 
 The UI is built using a component-based approach:
 
 1. **Dashboard** - Main container with navigation
-2. **Components**:
+2. **View**:
    - `StaffPanel` - Panel for displaying and managing staff
    - `StaffDetailsPanel` - Panel for displaying staff details
    - `StaffFormPanel` - Panel for adding/editing staff

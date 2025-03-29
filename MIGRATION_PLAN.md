@@ -6,7 +6,7 @@ This document outlines the steps to complete the migration to a fully component-
 
 We have:
 - Created a `Router` class in the `Support` package
-- Created basic components in the `Components` package:
+- Created basic components in the `View` package:
   - `StaffPanel`
   - `StaffDetailsPanel`
   - `StaffFormPanel`

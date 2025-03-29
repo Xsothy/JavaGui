@@ -1,8 +1,8 @@
 package Controller;
 
-import Components.ExpenseFormPanel;
-import Components.ExpensePanel;
-import Components.NavigatePanel;
+import View.ExpenseFormPanel;
+import View.ExpensePanel;
+import View.NavigatePanel;
 import Model.Expense;
 import Model.ExpenseWithStaff;
 import Model.Staff;
