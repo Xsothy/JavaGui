@@ -5,15 +5,16 @@ import Support.Router;
 import Support.SessionManager;
 import Support.UIConstants;
 import View.NavigatePanel;
-
-import javax.swing.*;
 import java.awt.*;
+import javax.swing.*;
 
 public class DashboardLayout extends NavigatePanel {
     private final JButton btnStaff;
     private final JButton btnExpense;
     private final JButton btnProduct;
     private final JButton btnCategory;
+    private final JButton btnSale;
+    private final JButton btnSaleDashboard;
     private final JButton btnEditProfile;
     private JButton currentSelectedButton;
 
@@ -41,12 +42,16 @@ public class DashboardLayout extends NavigatePanel {
         btnExpense = new JButton("Expense Management");
         btnProduct = new JButton("Product Management");
         btnCategory = new JButton("Category Management");
+        btnSale = new JButton("Sales Management");
+        btnSaleDashboard = new JButton("Sales Dashboard");
         btnEditProfile = new JButton("Edit Profile");
         JButton btnBack = new JButton("Back");
         applyButtonStyles(btnStaff);
         applyButtonStyles(btnExpense);
         applyButtonStyles(btnProduct);
         applyButtonStyles(btnCategory);
+        applyButtonStyles(btnSale);
+        applyButtonStyles(btnSaleDashboard);
         applyButtonStyles(btnEditProfile);
         applyButtonStyles(btnBack);
 
@@ -54,27 +59,30 @@ public class DashboardLayout extends NavigatePanel {
         btnEditProfile.setBackground(UIConstants.INFO_COLOR);
 
         btnStaff.addActionListener(e -> {
-            updateButtonSelectionState(btnStaff);
             Router.navigate("dashboard/staffs");
         });
 
         btnExpense.addActionListener(e -> {
-            updateButtonSelectionState(btnExpense);
             Router.navigate("dashboard/expenses");
         });
 
         btnProduct.addActionListener(e -> {
-            updateButtonSelectionState(btnProduct);
             Router.navigate("dashboard/products");
         });
 
         btnCategory.addActionListener(e -> {
-            updateButtonSelectionState(btnCategory);
             Router.navigate("dashboard/categories");
         });
 
+        btnSale.addActionListener(e -> {
+            Router.navigate("dashboard/sales");
+        });
+
+        btnSaleDashboard.addActionListener(e -> {
+            Router.navigate("dashboard/sales/dashboard");
+        });
+
         btnEditProfile.addActionListener(e -> {
-            updateButtonSelectionState(btnEditProfile);
             Staff staff = SessionManager.getCurrentUser();
             Router.navigate("dashboard/staffs/edit/" + staff.getId());
         });
@@ -93,18 +101,18 @@ public class DashboardLayout extends NavigatePanel {
         sidebar.add(btnProduct);
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(btnCategory);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidebar.add(btnSale);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidebar.add(btnSaleDashboard);
         sidebar.add(Box.createVerticalGlue());
         sidebar.add(btnEditProfile);
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(btnBack);
         sidebar.add(Box.createRigidArea(new Dimension(0, 20)));
 
-        // Content panel
-        NavigatePanel contentPanel = getContentPanel();
-
         // Add to main layout
         add(sidebar, BorderLayout.WEST);
-        add(contentPanel, BorderLayout.CENTER);
     }
 
     public NavigatePanel getContentPanel() {
@@ -131,11 +139,23 @@ public class DashboardLayout extends NavigatePanel {
 
     @Override
     public void render() {
+        // Content panel
+        NavigatePanel contentPanel = getContentPanel();
+        add(contentPanel, BorderLayout.CENTER);
         if (Router.getCurrentRoute().startsWith("dashboard/staffs")) {
             currentSelectedButton = btnStaff;
         } else if (Router.getCurrentRoute().startsWith("dashboard/expenses")) {
             currentSelectedButton = btnExpense;
+        } else if (Router.getCurrentRoute().startsWith("dashboard/categories")) {
+            currentSelectedButton = btnCategory;
+        } else if (Router.getCurrentRoute().startsWith("dashboard/products")) {
+            currentSelectedButton = btnProduct;
+        } else if (Router.getCurrentRoute().equals("dashboard/sales/dashboard")) {
+            currentSelectedButton = btnSaleDashboard;
+        } else if (Router.getCurrentRoute().startsWith("dashboard/sales")) {
+            currentSelectedButton = btnSale;
         }
+
         updateButtonSelectionState(currentSelectedButton);
         revalidate();
         repaint();
@@ -145,6 +165,13 @@ public class DashboardLayout extends NavigatePanel {
      * Update the visual state of buttons when selected.
      */
     private void updateButtonSelectionState(JButton selectedButton) {
+        btnStaff.setBackground(UIConstants.SIDEBAR_COLOR);
+        btnExpense.setBackground(UIConstants.SIDEBAR_COLOR);
+        btnProduct.setBackground(UIConstants.SIDEBAR_COLOR);
+        btnCategory.setBackground(UIConstants.SIDEBAR_COLOR);
+        btnSale.setBackground(UIConstants.SIDEBAR_COLOR);
+        btnSaleDashboard.setBackground(UIConstants.SIDEBAR_COLOR);
+
         if (currentSelectedButton == null) return;
         currentSelectedButton = selectedButton;
         currentSelectedButton.setBackground(UIConstants.PRIMARY_COLOR);
