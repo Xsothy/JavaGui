@@ -6,6 +6,7 @@ import Model.Staff;
 import Repository.ExpenseRepository;
 import Repository.StaffRepository;
 import Support.FileUtils;
+import View.Dashboard.ExpenseDetailPanel;
 import View.Dashboard.ExpenseFormPanel;
 import View.Dashboard.ExpensePanel;
 import View.NavigatePanel;
@@ -60,6 +61,18 @@ public class ExpenseController {
                     "Error", JOptionPane.ERROR_MESSAGE);
             return new NavigatePanel(); // Return empty panel or navigate back
         }
+    }
+
+    public NavigatePanel show(Map<String, String> params) {
+        int expenseId = Integer.parseInt(params.get("id"));
+
+        Optional<Expense> expenseOpt = this.getExpenseById(expenseId);
+        if (expenseOpt.isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Expense not found", "Error", JOptionPane.ERROR_MESSAGE);
+            return new NavigatePanel();
+        }
+
+        return new ExpenseDetailPanel(expenseOpt.get());
     }
 
     /**

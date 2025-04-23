@@ -12,6 +12,8 @@ import java.awt.*;
 public class DashboardLayout extends NavigatePanel {
     private final JButton btnStaff;
     private final JButton btnExpense;
+    private final JButton btnProduct;
+    private final JButton btnCategory;
     private final JButton btnEditProfile;
     private JButton currentSelectedButton;
 
@@ -37,10 +39,14 @@ public class DashboardLayout extends NavigatePanel {
         // Sidebar buttons
         btnStaff = new JButton("Staff Management");
         btnExpense = new JButton("Expense Management");
+        btnProduct = new JButton("Product Management");
+        btnCategory = new JButton("Category Management");
         btnEditProfile = new JButton("Edit Profile");
         JButton btnBack = new JButton("Back");
         applyButtonStyles(btnStaff);
         applyButtonStyles(btnExpense);
+        applyButtonStyles(btnProduct);
+        applyButtonStyles(btnCategory);
         applyButtonStyles(btnEditProfile);
         applyButtonStyles(btnBack);
 
@@ -55,6 +61,16 @@ public class DashboardLayout extends NavigatePanel {
         btnExpense.addActionListener(e -> {
             updateButtonSelectionState(btnExpense);
             Router.navigate("dashboard/expenses");
+        });
+
+        btnProduct.addActionListener(e -> {
+            updateButtonSelectionState(btnProduct);
+            Router.navigate("dashboard/products");
+        });
+
+        btnCategory.addActionListener(e -> {
+            updateButtonSelectionState(btnCategory);
+            Router.navigate("dashboard/categories");
         });
 
         btnEditProfile.addActionListener(e -> {
@@ -73,6 +89,10 @@ public class DashboardLayout extends NavigatePanel {
         sidebar.add(btnStaff);
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
         sidebar.add(btnExpense);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidebar.add(btnProduct);
+        sidebar.add(Box.createRigidArea(new Dimension(0, 10)));
+        sidebar.add(btnCategory);
         sidebar.add(Box.createVerticalGlue());
         sidebar.add(btnEditProfile);
         sidebar.add(Box.createRigidArea(new Dimension(0, 10)));

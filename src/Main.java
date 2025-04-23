@@ -1,13 +1,19 @@
+import Controller.CategoryController;
 import Controller.ExpenseController;
+import Controller.ProductController;
 import Controller.StaffController;
 import Support.DB;
 import Support.MigrationManager;
 import Support.Router;
+import View.Dashboard.CategoryFormPanel;
+import View.Dashboard.CategoryPanel;
+import View.Dashboard.ExpenseFormPanel;
+import View.Dashboard.ExpensePanel;
+import View.Dashboard.ProductFormPanel;
+import View.Dashboard.ProductPanel;
 import View.Dashboard.StaffFormPanel;
 import View.Dashboard.StaffPanel;
 import View.DashboardPanel;
-import View.Dashboard.ExpensePanel;
-import View.Dashboard.ExpenseFormPanel;
 import View.HomePanel;
 import View.LoginPanel;
 import View.NavigatePanel;
@@ -56,8 +62,21 @@ public class Main {
         Router.register("dashboard/expenses/edit/{id}", params ->
             new ExpenseController().edit(params)
         );
-//        Router.register("dashboard/expenses/{id}", params ->
-//            new ExpenseController().show(params));
+
+        // Register Category routes
+        Router.register("dashboard/categories", params -> new CategoryPanel());
+        Router.register("dashboard/categories/add", params -> new CategoryFormPanel());
+        Router.register("dashboard/categories/{id}", params -> new CategoryController().show(params));
+        Router.register("dashboard/categories/edit/{id}", params -> new CategoryController().edit(params));
+
+        // Register Product routes
+        Router.register("dashboard/products", params -> new ProductPanel());
+        Router.register("dashboard/products/add", params -> new ProductFormPanel());
+        Router.register("dashboard/products/{id}", params -> new ProductController().show(params));
+        Router.register("dashboard/products/edit/{id}", params -> new ProductController().edit(params));
+
+        // Register Expense detail route
+         Router.register("dashboard/expenses/:id", params -> new ExpenseController().show(params));
 
         Router.navigate("/");
     }

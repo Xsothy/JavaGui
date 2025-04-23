@@ -1,5 +1,7 @@
 package Support;
 
+import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,6 +11,8 @@ import java.nio.file.StandardCopyOption;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 /**
  * Utility class for file operations.
@@ -94,5 +98,63 @@ public class FileUtils {
     public static boolean deleteFile(String path) {
         File file = new File(path);
         return file.exists() && file.delete();
+    }
+
+    /**
+     * Saves a product image to the application's images directory
+     * 
+     * @param file The source image file to save
+     * @return The path to the saved image, or null if saving failed
+     */
+    public static String saveProductImage(File file) {
+        try {
+            // Create images directory if it doesn't exist
+            File imagesDir = new File("images");
+            if (!imagesDir.exists()) {
+                imagesDir.mkdirs();
+            }
+            
+            // Generate a unique filename based on timestamp
+            String fileName = "product_" + System.currentTimeMillis() + getFileExtension(file.getName());
+            File destFile = new File(imagesDir, fileName);
+            
+            // Copy the file
+            Files.copy(file.toPath(), destFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            
+            // Return the relative path
+            return "images/" + fileName;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     * Loads a product image as an ImageIcon and scales it to the specified dimensions
+     * 
+     * @param path The path to the image file
+     * @param width The desired width
+     * @param height The desired height
+     * @return The scaled ImageIcon, or null if loading failed
+     */
+    public static ImageIcon loadProductImageIcon(String path, int width, int height) {
+        try {
+            File imageFile = new File(path);
+            if (!imageFile.exists()) {
+                return null;
+            }
+            
+            // Load the original image
+            BufferedImage originalImage = ImageIO.read(imageFile);
+            
+            // Scale the image
+            Image scaledImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            
+            // Create and return the ImageIcon
+            return new ImageIcon(scaledImage);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 } 
