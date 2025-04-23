@@ -111,12 +111,14 @@ public class DashboardLayout extends NavigatePanel {
 
     @Override
     public void render() {
-        if (Router.getCurrentRoute().startsWith("/staffs")) {
+        if (Router.getCurrentRoute().startsWith("dashboard/staffs")) {
             currentSelectedButton = btnStaff;
-        } else if (Router.getCurrentRoute().startsWith("/expense")) {
+        } else if (Router.getCurrentRoute().startsWith("dashboard/expenses")) {
             currentSelectedButton = btnExpense;
         }
         updateButtonSelectionState(currentSelectedButton);
+        revalidate();
+        repaint();
     }
 
     /**

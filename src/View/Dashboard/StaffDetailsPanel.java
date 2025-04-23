@@ -6,131 +6,170 @@ import Model.Staff;
 import Model.StaffWithExpenses;
 import Support.Router;
 import Support.UIConstants;
-import View.DashboardPanel;
+import View.Layout.DashboardLayout;
 import View.NavigatePanel;
-
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 
 /**
  * Panel for displaying staff details with their expenses.
  */
-public class StaffDetailsPanel extends DashboardPanel {
+public class StaffDetailsPanel extends DashboardLayout {
     private final StaffController staffController;
     private final Staff staff;
-    private final Router router;
+    private NavigatePanel contentPanel;
+    private JPanel mainPanel;
+    private JPanel expensePanel;
 
     /**
      * Creates a new StaffDetailsPanel.
      *
      * @param staff staff member to display
-     * @param router The router for navigation
      */
-    public StaffDetailsPanel(Staff staff, Router router) {
+    public StaffDetailsPanel(Staff staff) {
         super();
         this.staffController = new StaffController();
         this.staff = staff;
-        this.router = router;
+    }
 
-        initComponents();
+    @Override
+    public void render() {
+        super.render();
         loadStaffData();
     }
 
-    /**
-     * Initialize the components.
-     */
-    private void initComponents() {
-        setLayout(new BorderLayout(0, 0));
-        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        setBackground(Color.WHITE);
+    @Override
+    public NavigatePanel getContentPanel() {
+        // Create a basic structure panel without data
+        contentPanel = new NavigatePanel();
+        contentPanel.setLayout(new BorderLayout());
+        contentPanel.setBackground(Color.WHITE);
+        
+        // Create a header with title and back button
+        JPanel headerPanel = setupHeaderPanel();
+        contentPanel.add(headerPanel, BorderLayout.NORTH);
 
-        JLabel loadingLabel = new JLabel("Loading staff data...");
-        loadingLabel.setHorizontalAlignment(JLabel.CENTER);
-        loadingLabel.setFont(UIConstants.TITLE_FONT);
-        loadingLabel.setForeground(UIConstants.TEXT_COLOR);
-        add(loadingLabel, BorderLayout.CENTER);
+        // Create main content panel
+        mainPanel = new JPanel(new BorderLayout(UIConstants.SECTION_SPACING, UIConstants.SECTION_SPACING));
+        mainPanel.setBackground(Color.WHITE);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.SECTION_SPACING,
+            UIConstants.CONTENT_PADDING,
+            UIConstants.CONTENT_PADDING,
+            UIConstants.CONTENT_PADDING
+        ));
+        
+        // Add a loading indicator initially
+        JLabel loadingLabel = new JLabel("Loading staff data...", JLabel.CENTER);
+        loadingLabel.setFont(UIConstants.SUBTITLE_FONT);
+        loadingLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
+        mainPanel.add(loadingLabel, BorderLayout.CENTER);
+        
+        contentPanel.add(mainPanel, BorderLayout.CENTER);
+        
+        return contentPanel;
     }
 
     /**
-     * Load the staff data.
+     * Load the staff data and update the panel.
      */
     private void loadStaffData() {
-            StaffWithExpenses staffWithExpenses =
-                    staffController.getStaffWithExpensesById(staff.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
-
-            // Clear the panel
-            removeAll();
-
-            // Create a header with title and back button
-            JPanel headerPanel = setupHeaderPanel();
-            add(headerPanel, BorderLayout.NORTH);
-
-            // Create main content panel
-            JPanel contentPanel = new JPanel(new BorderLayout(UIConstants.SECTION_SPACING, UIConstants.SECTION_SPACING));
-            contentPanel.setBackground(Color.WHITE);
-            contentPanel.setBorder(BorderFactory.createEmptyBorder(
-                UIConstants.SECTION_SPACING,
-                UIConstants.CONTENT_PADDING,
-                UIConstants.CONTENT_PADDING,
-                UIConstants.CONTENT_PADDING
-            ));
-
+        if (contentPanel == null || mainPanel == null) {
+            return; // Not initialized yet
+        }
+        
+        try {
+            StaffWithExpenses staffWithExpenses = 
+                staffController.getStaffWithExpensesById(staff.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
+            
+            // Clear the main panel
+            mainPanel.removeAll();
+            
             // Create the staff info panel
             JPanel staffInfoPanel = setupStaffDetailsPanel(staffWithExpenses.getStaff());
-            contentPanel.add(staffInfoPanel, BorderLayout.NORTH);
-
+            mainPanel.add(staffInfoPanel, BorderLayout.NORTH);
+            
             // Create expense table panel with title
-            JPanel expensePanel = new JPanel(new BorderLayout(10, 10));
+            expensePanel = new JPanel(new BorderLayout(10, 10));
             expensePanel.setBackground(Color.WHITE);
             expensePanel.setBorder(BorderFactory.createEmptyBorder(UIConstants.SECTION_SPACING, 0, 0, 0));
-
+            
             // Create a title panel with heading and stats
             JPanel expenseTitlePanel = new JPanel(new BorderLayout());
             expenseTitlePanel.setBackground(Color.WHITE);
             expenseTitlePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 15, 0));
-
+            
             JLabel expensesTitle = new JLabel("Expenses");
             expensesTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
             expensesTitle.setForeground(UIConstants.TEXT_COLOR);
-
+            
             // Stats panel showing counts
             JPanel statsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
             statsPanel.setBackground(Color.WHITE);
-
+            
             JLabel totalCountLabel = new JLabel("Total: " + staffWithExpenses.getExpenseCount() + " expenses");
             totalCountLabel.setFont(UIConstants.SUBTITLE_FONT);
             totalCountLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
-
+            
             JLabel totalAmountLabel = new JLabel("Amount: $" + staffWithExpenses.getTotalExpenseAmount());
             totalAmountLabel.setFont(UIConstants.BUTTON_FONT);
             totalAmountLabel.setForeground(UIConstants.TEXT_COLOR);
-
+            
             statsPanel.add(totalCountLabel);
             statsPanel.add(totalAmountLabel);
-
+            
             expenseTitlePanel.add(expensesTitle, BorderLayout.WEST);
             expenseTitlePanel.add(statsPanel, BorderLayout.EAST);
-
+            
             expensePanel.add(expenseTitlePanel, BorderLayout.NORTH);
-
+            
             // Create the expense table
             JTable expenseTable = createExpenseTable(staffWithExpenses);
             JScrollPane scrollPane = new JScrollPane(expenseTable);
             scrollPane.setBorder(BorderFactory.createEmptyBorder());
             scrollPane.getViewport().setBackground(Color.WHITE);
-
+            
             expensePanel.add(scrollPane, BorderLayout.CENTER);
-
-            contentPanel.add(expensePanel, BorderLayout.CENTER);
-
-            add(contentPanel, BorderLayout.CENTER);
-
-            revalidate();
-            repaint();
-
+            
+            mainPanel.add(expensePanel, BorderLayout.CENTER);
+            
+            // Refresh the UI
+            contentPanel.revalidate();
+            contentPanel.repaint();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Show error message
+            mainPanel.removeAll();
+            JPanel errorPanel = new JPanel(new BorderLayout());
+            errorPanel.setBackground(Color.WHITE);
+            
+            JLabel errorLabel = new JLabel("Error loading staff data: " + e.getMessage(), JLabel.CENTER);
+            errorLabel.setFont(UIConstants.SUBTITLE_FONT);
+            errorLabel.setForeground(UIConstants.DANGER_COLOR);
+            errorPanel.add(errorLabel, BorderLayout.CENTER);
+            
+            JButton retryButton = new JButton("Retry");
+            retryButton.setFont(UIConstants.BUTTON_FONT);
+            retryButton.setForeground(Color.WHITE);
+            retryButton.setBackground(UIConstants.PRIMARY_COLOR);
+            retryButton.addActionListener(evt -> loadStaffData());
+            
+            JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+            buttonPanel.setBackground(Color.WHITE);
+            buttonPanel.add(retryButton);
+            errorPanel.add(buttonPanel, BorderLayout.SOUTH);
+            
+            mainPanel.add(errorPanel, BorderLayout.CENTER);
+            
+            // Refresh the UI
+            contentPanel.revalidate();
+            contentPanel.repaint();
+        }
     }
 
     /**
@@ -175,7 +214,7 @@ public class StaffDetailsPanel extends DashboardPanel {
         });
 
         btnBack.addActionListener(e -> {
-            router.navigate("/staffs");
+            Router.navigate("dashboard/staffs");
         });
 
         headerPanel.add(btnBack, BorderLayout.WEST);
@@ -242,27 +281,46 @@ public class StaffDetailsPanel extends DashboardPanel {
 
         infoPanel.add(staffInfoPanel, BorderLayout.CENTER);
 
-        detailsPanel.add(infoPanel, BorderLayout.NORTH);
+        // Add edit button if appropriate (depending on user role/permissions)
+        JButton editButton = new JButton("Edit Staff Member");
+        editButton.setFont(UIConstants.BUTTON_FONT);
+        editButton.setForeground(Color.WHITE);
+        editButton.setBackground(UIConstants.PRIMARY_COLOR);
+        editButton.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H,
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H
+        ));
+        editButton.setFocusPainted(false);
+        editButton.addActionListener(e -> Router.navigate("dashboard/staffs/edit/" + staff.getId()));
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(Color.WHITE);
+        buttonPanel.add(editButton);
+
+        detailsPanel.add(infoPanel, BorderLayout.CENTER);
+        detailsPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         return detailsPanel;
     }
 
     /**
-     * Add a label pair to a panel.
+     * Add a row to the details grid.
      *
-     * @param panel The panel to add to
+     * @param panel The panel to add the row to
      * @param labelText The label text
      * @param valueText The value text
      */
     private void addDetailRow(JPanel panel, String labelText, String valueText) {
         JLabel label = new JLabel(labelText);
-        label.setFont(UIConstants.BUTTON_FONT);
+        label.setFont(UIConstants.SUBTITLE_FONT);
         label.setForeground(UIConstants.LIGHT_TEXT_COLOR);
-
+        
         JLabel value = new JLabel(valueText);
         value.setFont(UIConstants.TABLE_CONTENT_FONT);
         value.setForeground(UIConstants.TEXT_COLOR);
-
+        
         panel.add(label);
         panel.add(value);
     }
@@ -270,56 +328,61 @@ public class StaffDetailsPanel extends DashboardPanel {
     /**
      * Create the expense table.
      *
-     * @param staffWithExpenses The staff member with expenses
+     * @param staffWithExpenses The staff with expenses data
      * @return The expense table
      */
     private JTable createExpenseTable(StaffWithExpenses staffWithExpenses) {
-        // Create the table model
-        String[] columnNames = {"ID", "Name", "Description", "Amount"};
-        Object[][] data = new Object[staffWithExpenses.getExpenses().size()][columnNames.length];
-
-        // Add the expenses to the table
-        for (int i = 0; i < staffWithExpenses.getExpenses().size(); i++) {
-            ExpenseWithStaff expense = staffWithExpenses.getExpenses().get(i);
-            data[i][0] = expense.getExpense().getId();
-            data[i][1] = expense.getExpense().getName();
-            data[i][2] = expense.getExpense().getDescription();
-            data[i][3] = expense.getExpense().getAmount();
+        // Create table model
+        String[] columnNames = {"ID", "Name", "Description", "Amount", "Date"};
+        DefaultTableModel model = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Make all cells non-editable
+            }
+        };
+        
+        // Populate with data
+        for (ExpenseWithStaff expense : staffWithExpenses.getExpenses()) {
+            model.addRow(new Object[]{
+                expense.getExpense().getId(),
+                expense.getExpense().getName(),
+                expense.getExpense().getDescription(),
+                "$" + expense.getExpense().getAmount(),
+                expense.getExpense().getDate()
+            });
         }
-
-        // Create the table
-        JTable table = new JTable(data, columnNames);
+        
+        // Create and configure table
+        JTable table = new JTable(model);
         table.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
         table.setShowGrid(true);
         table.setGridColor(UIConstants.BORDER_COLOR);
-        table.setSelectionBackground(new Color(235, 245, 255));
-        table.setSelectionForeground(UIConstants.TEXT_COLOR);
+        table.setSelectionBackground(UIConstants.TABLE_SELECTION_BG_COLOR);
+        table.setSelectionForeground(UIConstants.TABLE_SELECTION_FG_COLOR);
         table.setFont(UIConstants.TABLE_CONTENT_FONT);
-
-        // Use AUTO_RESIZE_ALL_COLUMNS to make the table fill the container width
-        table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-
-        // Style the header
+        
+        // Style header
         table.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
-        table.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
-        table.getTableHeader().setForeground(Color.WHITE);
-        table.getTableHeader().setPreferredSize(new Dimension(table.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT));
-
-//        // Set relative column widths as percentages
-//        int totalWidth = table.getParent().getWidth();
-//        if (totalWidth > 0) {
-//            table.getColumnModel().getColumn(0).setPreferredWidth((int)(totalWidth * 0.10));  // ID (10%)
-//            table.getColumnModel().getColumn(1).setPreferredWidth((int)(totalWidth * 0.25));  // Name (25%)
-//            table.getColumnModel().getColumn(2).setPreferredWidth((int)(totalWidth * 0.45));  // Description (45%)
-//            table.getColumnModel().getColumn(3).setPreferredWidth((int)(totalWidth * 0.20));  // Amount (20%)
-//        }
-
-        // Center the ID and Amount columns
+        table.getTableHeader().setBackground(UIConstants.TABLE_HEADER_BG_COLOR);
+        table.getTableHeader().setForeground(UIConstants.TABLE_HEADER_FG_COLOR);
+        table.getTableHeader().setPreferredSize(
+            new Dimension(table.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
+        );
+        
+        // Set column widths
+        int totalWidth = table.getParent() != null ? table.getParent().getWidth() : 800;
+        table.getColumnModel().getColumn(0).setPreferredWidth((int)(totalWidth * 0.1));  // ID
+        table.getColumnModel().getColumn(1).setPreferredWidth((int)(totalWidth * 0.25)); // Name
+        table.getColumnModel().getColumn(2).setPreferredWidth((int)(totalWidth * 0.35)); // Description
+        table.getColumnModel().getColumn(3).setPreferredWidth((int)(totalWidth * 0.15)); // Amount
+        table.getColumnModel().getColumn(4).setPreferredWidth((int)(totalWidth * 0.15)); // Date
+        
+        // Center align ID and Amount columns
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
-
+        
         return table;
     }
 } 

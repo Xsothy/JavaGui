@@ -3,284 +3,505 @@ package View.Dashboard;
 import Controller.StaffController;
 import Model.Staff;
 import Support.Router;
+import Support.UIConstants;
+import View.Layout.DashboardLayout;
 import View.NavigatePanel;
-
-import javax.swing.*;
 import java.awt.*;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.awt.event.*;
+import javax.swing.*;
 
 /**
- * A panel for creating and editing staff members.
+ * Panel for adding and editing staff members.
  */
-public class StaffFormPanel extends NavigatePanel {
+public class StaffFormPanel extends DashboardLayout {
     private final StaffController staffController;
-    private Staff staff;
-    private int staffId = 0;
-    private boolean isEditMode;
-    private final Router router;
+    private final Staff staffToEdit;
+    private final boolean isEditMode;
     
-    // Form components
-    private JTextField txtName;
-    private JTextField txtPosition;
-    private JTextField txtUsername;
-    private JPasswordField txtPassword;
-    private JComboBox<String> cmbRole;
-    private JButton btnSave;
-    private JButton btnCancel;
-
-    public StaffFormPanel(Router router) {
+    // Form fields
+    private JTextField nameField;
+    private JTextField positionField;
+    private JTextField usernameField;
+    private JPasswordField passwordField;
+    private JPasswordField confirmPasswordField;
+    private JComboBox<String> roleComboBox;
+    private NavigatePanel contentPanel;
+    
+    /**
+     * Constructor for creating a new staff member.
+     */
+    public StaffFormPanel() {
+        super();
         this.staffController = new StaffController();
-        this.router = router;
+        this.staffToEdit = null;
         this.isEditMode = false;
-        this.staff = null;
-        
-        initComponents();
-        setupListeners();
+    }
+    
+    /**
+     * Constructor for editing an existing staff member.
+     * 
+     * @param staffToEdit The staff member to edit
+     */
+    public StaffFormPanel(Staff staffToEdit) {
+        super();
+        this.staffController = new StaffController();
+        this.staffToEdit = staffToEdit;
+        this.isEditMode = true;
+    }
+    
+    @Override
+    public void render() {
+        super.render();
+        setupForm();
     }
 
-    public StaffFormPanel(Staff staff, Router router) {
-        this.router = router;
-        this.staffController = new StaffController();
-        this.staff = staff;
-        this.staffId = staff.getId();
-        this.isEditMode = true;
+    /**
+     * Sets up the form with data after the panel has been rendered
+     */
+    private void setupForm() {
+        if (contentPanel != null && isEditMode && staffToEdit != null) {
+            populateFormFields();
+        }
+    }
+
+    @Override
+    public NavigatePanel getContentPanel() {
+        // Create a basic panel with layout but without interactive data
+        contentPanel = new NavigatePanel();
+        contentPanel.setLayout(new BorderLayout(0, 0));
+        contentPanel.setBackground(Color.WHITE);
         
-        initComponents();
-        setupListeners();
+        // Create header panel with title and back button
+        JPanel headerPanel = createHeaderPanel();
+        contentPanel.add(headerPanel, BorderLayout.NORTH);
         
-        // Fill the form with the staff data
-        txtName.setText(staff.getName());
-        txtPosition.setText(staff.getPosition());
-        txtUsername.setText(staff.getUserName());
-        cmbRole.setSelectedItem(staff.getRole());
+        // Create form panel
+        JPanel formPanel = createFormPanel();
+        contentPanel.add(formPanel, BorderLayout.CENTER);
         
-        // In edit mode, password is optional, so make the field less prominent
-        txtPassword.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
-        txtPassword.setBackground(new Color(245, 245, 245));
+        return contentPanel;
     }
     
     /**
-     * Initialize the components.
+     * Populate the form fields with the staff member's data.
      */
-    private void initComponents() {
-        setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        setBackground(new Color(255, 255, 255));
-        setPreferredSize(new Dimension(500, 400));
-        
-        // Form title
-        JLabel titleLabel = new JLabel(isEditMode ? "Edit Staff" : "Add New Staff");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
-        titleLabel.setHorizontalAlignment(JLabel.CENTER);
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 20, 0));
-        
-        add(titleLabel, BorderLayout.NORTH);
-        
-        // Form panel
-        JPanel formPanel = new JPanel(new GridBagLayout());
-        formPanel.setBackground(new Color(255, 255, 255));
-        
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(5, 5, 5, 5);
-        
-        // Add form fields
-        addFormField(formPanel, "Name:", txtName = new JTextField(20), 0, gbc);
-        addFormField(formPanel, "Position:", txtPosition = new JTextField(20), 1, gbc);
-        addFormField(formPanel, "Username:", txtUsername = new JTextField(20), 2, gbc);
-        addFormField(formPanel, isEditMode ? "New Password:" : "Password:", txtPassword = new JPasswordField(20), 3, gbc);
-        
-        JLabel roleLabel = new JLabel("Role:");
-        roleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0;
-        gbc.gridy = 4;
-        formPanel.add(roleLabel, gbc);
-        
-        cmbRole = new JComboBox<>(new String[]{"admin", "staff"});
-        cmbRole.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 1;
-        gbc.gridy = 4;
-        formPanel.add(cmbRole, gbc);
-        
-        add(formPanel, BorderLayout.CENTER);
-        
-        // Button panel
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        buttonPanel.setBackground(new Color(255, 255, 255));
-        
-        btnSave = new JButton(isEditMode ? "Update" : "Save");
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnSave.setBackground(new Color(57, 117, 247));
-        btnSave.setForeground(Color.WHITE);
-        btnSave.setFocusPainted(false);
-        
-        btnCancel = new JButton("Cancel");
-        btnCancel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
-        buttonPanel.add(btnSave);
-        buttonPanel.add(btnCancel);
-        
-        add(buttonPanel, BorderLayout.SOUTH);
-    }
-    
-    /**
-     * Add a form field to the panel.
-     * 
-     * @param panel The panel to add to
-     * @param labelText The label text
-     * @param field The field component
-     * @param row The row index
-     * @param gbc The GridBagConstraints
-     */
-    private void addFormField(JPanel panel, String labelText, JComponent field, int row, GridBagConstraints gbc) {
-        JLabel label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        gbc.gridx = 0;
-        gbc.gridy = row;
-        panel.add(label, gbc);
-        
-        if (field instanceof JTextField) {
-            ((JTextField) field).setFont(new Font("Segoe UI", Font.PLAIN, 14));
+    private void populateFormFields() {
+        // Only populate if fields have been initialized
+        if (nameField == null || positionField == null || usernameField == null || 
+            passwordField == null || confirmPasswordField == null || roleComboBox == null) {
+            return;
         }
         
-        gbc.gridx = 1;
-        gbc.gridy = row;
-        panel.add(field, gbc);
+        nameField.setText(staffToEdit.getName());
+        positionField.setText(staffToEdit.getPosition());
+        usernameField.setText(staffToEdit.getUserName());
+        
+        // Don't populate password fields when editing
+        passwordField.setText("");
+        confirmPasswordField.setText("");
+        
+        // Set the role
+        roleComboBox.setSelectedItem(staffToEdit.getRole());
     }
     
     /**
-     * Setup component listeners.
+     * Create the header panel with title and back button.
+     * 
+     * @return The header panel
      */
-    private void setupListeners() {
-        // Save button listener
-        btnSave.addActionListener(e -> {
-            try {
-                if (validateForm()) {
-                    if (isEditMode) {
-                        updateStaff();
-                    } else {
-                        createStaff();
-                    }
-                    
-                    router.navigate("/staffs");
-                }
-            } catch (SQLException ex) {
-                Logger.getLogger(StaffFormPanel.class.getName()).log(Level.SEVERE, "Database error", ex);
-                JOptionPane.showMessageDialog(this, "Database error: " + ex.getMessage(),
-                        "Database Error", JOptionPane.ERROR_MESSAGE);
-            } catch (IllegalArgumentException ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(),
-                        "Validation Error", JOptionPane.ERROR_MESSAGE);
+    private JPanel createHeaderPanel() {
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
+            BorderFactory.createEmptyBorder(
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING
+            )
+        ));
+        
+        // Left side of header: Back button
+        JButton backButton = new JButton("Back to Staff List");
+        backButton.setFont(UIConstants.BUTTON_FONT);
+        backButton.setForeground(Color.WHITE);
+        backButton.setBackground(UIConstants.PRIMARY_COLOR);
+        backButton.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H,
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H
+        ));
+        backButton.setFocusPainted(false);
+        backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        // Add hover effect
+        backButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                backButton.setBackground(UIConstants.ACCENT_COLOR);
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                backButton.setBackground(UIConstants.PRIMARY_COLOR);
             }
         });
         
-        // Cancel button listener
-        btnCancel.addActionListener(e -> {
-            router.navigate("/staffs");
+        backButton.addActionListener(e -> {
+            Router.navigate("dashboard/staffs");
         });
+        
+        // Right side of header: Title
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        titlePanel.setBackground(Color.WHITE);
+        
+        String titleText = isEditMode ? "Edit Staff Member" : "Add New Staff Member";
+        JLabel titleLabel = new JLabel(titleText);
+        titleLabel.setFont(UIConstants.TITLE_FONT);
+        titleLabel.setForeground(UIConstants.TEXT_COLOR);
+        titleLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        
+        String subtitleText = isEditMode ? "Update staff information" : "Enter staff information";
+        JLabel subtitleLabel = new JLabel(subtitleText);
+        subtitleLabel.setFont(UIConstants.SUBTITLE_FONT);
+        subtitleLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
+        subtitleLabel.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        
+        titlePanel.add(titleLabel);
+        titlePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        titlePanel.add(subtitleLabel);
+        
+        headerPanel.add(backButton, BorderLayout.WEST);
+        headerPanel.add(titlePanel, BorderLayout.EAST);
+        
+        return headerPanel;
     }
     
     /**
-     * Validate the form inputs.
+     * Create the form panel.
+     * 
+     * @return The form panel
+     */
+    private JPanel createFormPanel() {
+        JPanel formPanel = new JPanel();
+        formPanel.setLayout(new BoxLayout(formPanel, BoxLayout.Y_AXIS));
+        formPanel.setBackground(Color.WHITE);
+        formPanel.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.SECTION_SPACING,
+            UIConstants.CONTENT_PADDING,
+            UIConstants.CONTENT_PADDING,
+            UIConstants.CONTENT_PADDING
+        ));
+        
+        // Form container with fields
+        JPanel formFieldsPanel = new JPanel(new GridBagLayout());
+        formFieldsPanel.setBackground(Color.WHITE);
+        formFieldsPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+            BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(8, 8, 8, 8);
+        
+        // Name field
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        JLabel nameLabel = new JLabel("Full Name:");
+        nameLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(nameLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        gbc.gridwidth = 2;
+        nameField = new JTextField(20);
+        nameField.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(nameField, gbc);
+        
+        // Position field
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        JLabel positionLabel = new JLabel("Position:");
+        positionLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(positionLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 1;
+        gbc.gridwidth = 2;
+        positionField = new JTextField(20);
+        positionField.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(positionField, gbc);
+        
+        // Username field
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        JLabel usernameLabel = new JLabel("Username:");
+        usernameLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(usernameLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 2;
+        gbc.gridwidth = 2;
+        usernameField = new JTextField(20);
+        usernameField.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(usernameField, gbc);
+        
+        // Password field
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.gridwidth = 1;
+        JLabel passwordLabel = new JLabel(isEditMode ? "New Password:" : "Password:");
+        passwordLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(passwordLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        gbc.gridwidth = 2;
+        passwordField = new JPasswordField(20);
+        passwordField.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(passwordField, gbc);
+        
+        // Confirm Password field
+        gbc.gridx = 0;
+        gbc.gridy = 4;
+        gbc.gridwidth = 1;
+        JLabel confirmPasswordLabel = new JLabel(isEditMode ? "Confirm New Password:" : "Confirm Password:");
+        confirmPasswordLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(confirmPasswordLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        gbc.gridwidth = 2;
+        confirmPasswordField = new JPasswordField(20);
+        confirmPasswordField.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(confirmPasswordField, gbc);
+        
+        // Note about passwords (for edit mode)
+        if (isEditMode) {
+            gbc.gridx = 1;
+            gbc.gridy = 5;
+            gbc.gridwidth = 2;
+            JLabel noteLabel = new JLabel("Leave blank to keep current password");
+            noteLabel.setFont(new Font("Segoe UI", Font.ITALIC, 12));
+            noteLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
+            formFieldsPanel.add(noteLabel, gbc);
+        }
+        
+        // Role field
+        gbc.gridx = 0;
+        gbc.gridy = 6;
+        gbc.gridwidth = 1;
+        JLabel roleLabel = new JLabel("Role:");
+        roleLabel.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(roleLabel, gbc);
+        
+        gbc.gridx = 1;
+        gbc.gridy = 6;
+        gbc.gridwidth = 2;
+        String[] roles = {"staff", "admin"};
+        roleComboBox = new JComboBox<>(roles);
+        roleComboBox.setFont(UIConstants.TABLE_CONTENT_FONT);
+        formFieldsPanel.add(roleComboBox, gbc);
+        
+        // Buttons Panel
+        JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonsPanel.setBackground(Color.WHITE);
+        buttonsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        
+        // Cancel button
+        JButton cancelButton = new JButton("Cancel");
+        cancelButton.setFont(UIConstants.BUTTON_FONT);
+        cancelButton.setForeground(UIConstants.TEXT_COLOR);
+        cancelButton.setBackground(UIConstants.SECONDARY_COLOR);
+        cancelButton.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H,
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H
+        ));
+        cancelButton.setFocusPainted(false);
+        cancelButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        cancelButton.addActionListener(e -> {
+            Router.navigate("dashboard/staffs");
+        });
+        
+        // Save button
+        JButton saveButton = new JButton("Submit");
+        saveButton.setFont(UIConstants.BUTTON_FONT);
+        saveButton.setForeground(Color.WHITE);
+        saveButton.setBackground(UIConstants.SUCCESS_COLOR);
+        saveButton.setBorder(BorderFactory.createEmptyBorder(
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H,
+            UIConstants.BUTTON_PADDING_V,
+            UIConstants.BUTTON_PADDING_H
+        ));
+        saveButton.setFocusPainted(false);
+        saveButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        saveButton.addActionListener(e -> {
+            saveStaff();
+        });
+        
+        buttonsPanel.add(cancelButton);
+        buttonsPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        buttonsPanel.add(saveButton);
+        
+        // Add form fields panel and buttons panel to the form panel
+        formPanel.add(formFieldsPanel);
+        formPanel.add(Box.createRigidArea(new Dimension(0, 20)));
+        formPanel.add(buttonsPanel);
+        
+        return formPanel;
+    }
+    
+    /**
+     * Save the staff member.
+     */
+    private void saveStaff() {
+        // Validate form
+        if (!validateForm()) {
+            return;
+        }
+        
+        String name = nameField.getText().trim();
+        String position = positionField.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        String confirmPassword = new String(confirmPasswordField.getPassword());
+        String role = (String) roleComboBox.getSelectedItem();
+        
+        try {
+            if (isEditMode) {
+                // Update existing staff
+                Staff updatedStaff = new Staff(
+                    staffToEdit.getId(),
+                    name,
+                    position,
+                    username,
+                    staffToEdit.getPassword(), // Keep original password if not changing
+                    role
+                );
+                
+                boolean success;
+                
+                // Check if password is being updated
+                if (!password.isEmpty()) {
+                    if (!password.equals(confirmPassword)) {
+                        JOptionPane.showMessageDialog(this,
+                            "Passwords do not match. Please try again.",
+                            "Password Error",
+                            JOptionPane.ERROR_MESSAGE);
+                        return;
+                    }
+                    
+                    success = staffController.updateStaffWithPassword(updatedStaff, password);
+                } else {
+                    success = staffController.updateStaff(updatedStaff);
+                }
+                
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                        "Staff updated successfully",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+                    Router.navigate("dashboard/staffs");
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                        "Failed to update staff",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                // Create new staff
+                if (!password.equals(confirmPassword)) {
+                    JOptionPane.showMessageDialog(this,
+                        "Passwords do not match. Please try again.",
+                        "Password Error",
+                        JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                Staff newStaff = staffController.createStaff(name, position, username, password, role);
+                
+                if (newStaff != null) {
+                    JOptionPane.showMessageDialog(this,
+                        "Staff created successfully",
+                        "Success",
+                        JOptionPane.INFORMATION_MESSAGE);
+                    Router.navigate("dashboard/staffs");
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                        "Failed to create staff",
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this,
+                "Error: " + ex.getMessage(),
+                "Input Error",
+                JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * Validate the form fields.
      * 
      * @return true if the form is valid, false otherwise
      */
     private boolean validateForm() {
-        // Check name
-        if (txtName.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Name cannot be empty",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-            txtName.requestFocus();
+        String name = nameField.getText().trim();
+        String username = usernameField.getText().trim();
+        String password = new String(passwordField.getPassword());
+        String confirmPassword = new String(confirmPasswordField.getPassword());
+        
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter a name",
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE);
+            nameField.requestFocus();
             return false;
         }
         
-        // Check username
-        if (txtUsername.getText().trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Username cannot be empty",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-            txtUsername.requestFocus();
+        if (username.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter a username",
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE);
+            usernameField.requestFocus();
             return false;
         }
         
-        // Check password (only required in add mode)
-        if (!isEditMode && new String(txtPassword.getPassword()).trim().isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Password cannot be empty",
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-            txtPassword.requestFocus();
+        // For new staff, password is required
+        if (!isEditMode && password.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "Please enter a password",
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE);
+            passwordField.requestFocus();
+            return false;
+        }
+        
+        // If password field has content, confirm must match
+        if (!password.isEmpty() && !password.equals(confirmPassword)) {
+            JOptionPane.showMessageDialog(this,
+                "Passwords do not match",
+                "Validation Error",
+                JOptionPane.ERROR_MESSAGE);
+            confirmPasswordField.requestFocus();
             return false;
         }
         
         return true;
-    }
-    
-    /**
-     * Create a new staff member.
-     * 
-     * @throws SQLException If a database error occurs
-     */
-    private void createStaff() throws SQLException {
-        String name = txtName.getText().trim();
-        String position = txtPosition.getText().trim();
-        String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim();
-        String role = (String) cmbRole.getSelectedItem();
-        
-        try {
-            Staff staff = staffController.createStaff(name, position, username, password, role);
-            JOptionPane.showMessageDialog(this, "Staff created successfully",
-                    "Success", JOptionPane.INFORMATION_MESSAGE);
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(),
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-            throw ex;
-        }
-    }
-    
-    /**
-     * Update an existing staff member.
-     * 
-     * @throws SQLException If a database error occurs
-     */
-    private void updateStaff() throws SQLException {
-        String name = txtName.getText().trim();
-        String position = txtPosition.getText().trim();
-        String username = txtUsername.getText().trim();
-        String password = new String(txtPassword.getPassword()).trim();
-        String role = (String) cmbRole.getSelectedItem();
-
-        try {
-            // Get the staff member from the database
-            Staff staff = staffController.getStaffById(staffId)
-                    .orElseThrow(() -> new IllegalArgumentException("Staff not found"));
-            
-            // Update the staff member
-            staff.setName(name);
-            staff.setPosition(position);
-            staff.setUserName(username);
-            staff.setRole(role);
-            
-            boolean success;
-            if (password.isEmpty()) {
-                // Update without changing the password
-                success = staffController.updateStaff(staff);
-            } else {
-                // Update with a new password
-                success = staffController.updateStaffWithPassword(staff, password);
-            }
-            
-            if (success) {
-                JOptionPane.showMessageDialog(this, "Staff updated successfully",
-                        "Success", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                JOptionPane.showMessageDialog(this, "Failed to update staff",
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (IllegalArgumentException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(),
-                    "Validation Error", JOptionPane.ERROR_MESSAGE);
-            throw ex;
-        }
     }
 } 

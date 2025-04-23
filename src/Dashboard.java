@@ -78,18 +78,18 @@ public class Dashboard extends javax.swing.JFrame {
         // Add action listeners
         btnStaff.addActionListener(e -> {
             updateButtonSelectionState(btnStaff);
-            router.navigate("/staffs");
+            Router.navigate("dashboard/staffs");
         });
         
         btnExpense.addActionListener(e -> {
             updateButtonSelectionState(btnExpense);
-            router.navigate("/expenses");
+            Router.navigate("dashboard/expenses");
         });
 
         btnEditProfile.addActionListener(e -> {
             updateButtonSelectionState(btnEditProfile);
             Staff staff = SessionManager.getCurrentUser();
-            router.navigate("/staffs/edit/" + staff.getId());
+            Router.navigate("dashboard/staffs/edit/" + staff.getId());
         });
 
 

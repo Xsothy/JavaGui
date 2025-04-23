@@ -1,19 +1,17 @@
 package Controller;
 
+import Exception.ValidateException;
+import Model.Staff;
 import Model.StaffWithExpenses;
+import Repository.StaffRepository;
 import Support.SessionManager;
 import View.*;
-import Model.Staff;
-import Repository.StaffRepository;
-import Support.Router;
-
-import javax.swing.*;
+import View.Dashboard.StaffDetailsPanel;
+import View.Dashboard.StaffFormPanel;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import Exception.ValidateException;
-import View.Dashboard.StaffDetailsPanel;
-import View.Dashboard.StaffFormPanel;
+import javax.swing.*;
 
 public class StaffController {
     private final StaffRepository staffRepository;
@@ -22,7 +20,7 @@ public class StaffController {
         this.staffRepository = new StaffRepository();
     }
 
-    public NavigatePanel show(Map<String, String> parameters, Router router) {
+    public NavigatePanel show(Map<String, String> parameters) {
         int staffId = Integer.parseInt(parameters.get("id"));
 
         Optional<Staff> staffOpt = staffRepository.getStaffById(staffId);
@@ -31,10 +29,10 @@ public class StaffController {
             return new NavigatePanel();
         }
 
-        return new StaffDetailsPanel(staffOpt.get(), router);
+        return new StaffDetailsPanel(staffOpt.get());
     }
 
-    public NavigatePanel edit(Map<String, String> parameters, Router router) {
+    public NavigatePanel edit(Map<String, String> parameters) {
         int staffId = Integer.parseInt(parameters.get("id"));
 
         Optional<Staff> staffOpt = staffRepository.getStaffById(staffId);
@@ -43,7 +41,7 @@ public class StaffController {
             return new NavigatePanel();
         }
 
-        return new StaffFormPanel(staffOpt.get(), router);
+        return new StaffFormPanel(staffOpt.get());
     }
 
     public List<Staff> getAllStaff() {

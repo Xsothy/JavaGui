@@ -1,15 +1,16 @@
+import Controller.ExpenseController;
+import Controller.StaffController;
 import Support.DB;
 import Support.MigrationManager;
 import Support.Router;
+import View.Dashboard.StaffFormPanel;
 import View.Dashboard.StaffPanel;
 import View.DashboardPanel;
+import View.Dashboard.ExpensePanel;
+import View.Dashboard.ExpenseFormPanel;
 import View.HomePanel;
 import View.LoginPanel;
 import View.NavigatePanel;
-
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -27,19 +28,37 @@ public class Main {
         NavigatePanel contentPane = new NavigatePanel();
         application.setContentPane(contentPane);
 
+
+
+        if (!initializeDatabase()) {
+            JOptionPane.showMessageDialog(application,
+                    "Failed to initialize database. Application cannot start.",
+                    "Database Error",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
         Router.initialize(application);
         Router.register("/", new HomePanel());
         Router.register("login", new LoginPanel());
         Router.register("dashboard", new DashboardPanel());
         Router.register("dashboard/staffs", new StaffPanel());
+        
+        // Register dynamic routes for staff operations
+        Router.register("dashboard/staffs/add", params -> new StaffFormPanel());
+        Router.register("dashboard/staffs/edit/{id}", params -> 
+            new StaffController().edit(params));
+        Router.register("dashboard/staffs/{id}", params -> 
+            new StaffController().show(params));
+            
+        // Register routes for expense operations
+        Router.register("dashboard/expenses", new ExpensePanel());
+        Router.register("dashboard/expenses/add", params -> new ExpenseFormPanel());
+        Router.register("dashboard/expenses/edit/{id}", params ->
+            new ExpenseController().edit(params)
+        );
+//        Router.register("dashboard/expenses/{id}", params ->
+//            new ExpenseController().show(params));
 
-
-        if (!initializeDatabase()) {
-            JOptionPane.showMessageDialog(application,
-                "Failed to initialize database. Application cannot start.",
-                "Database Error",
-                JOptionPane.ERROR_MESSAGE);
-        }
         Router.navigate("/");
     }
 

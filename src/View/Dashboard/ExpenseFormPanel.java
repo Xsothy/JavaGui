@@ -1,4 +1,4 @@
-package View;
+package View.Dashboard;
 
 import Controller.ExpenseController;
 import Controller.StaffController;
@@ -7,6 +7,10 @@ import Model.Staff;
 import Support.Router;
 import Support.SessionManager;
 import Support.UIConstants;
+import View.DashboardPanel;
+import View.Layout.DashboardLayout;
+import View.NavigatePanel;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.SQLException;
@@ -18,11 +22,10 @@ import javax.swing.*;
 /**
  * A panel for creating and editing expenses.
  */
-public class ExpenseFormPanel extends NavigatePanel {
+public class ExpenseFormPanel extends DashboardLayout {
     private final ExpenseController expenseController;
     private final StaffController staffController;
-    private final Router router;
-    
+
     private int expenseId = 0;
     private final boolean isEditMode;
 
@@ -34,44 +37,49 @@ public class ExpenseFormPanel extends NavigatePanel {
     private JLabel lblImage;
     private JButton btnSave;
     private JButton btnCancel;
-    
+
     /**
      * Creates a new ExpenseFormPanel for adding a new expense.
-     * 
-     * @param router The router for navigation
+     *
      */
-    public ExpenseFormPanel(Router router) {
+    public ExpenseFormPanel() {
         this.expenseController = new ExpenseController();
         this.staffController = new StaffController();
-        this.router = router;
         this.isEditMode = false;
-        
-        initComponents();
+
         loadStaffComboBox();
     }
-    
-    /**
-     * Creates a new ExpenseFormPanel for editing an existing expense.
-     * 
-     * @param router The router for navigation
-     * @param expense The expense to edit
-     */
-    public ExpenseFormPanel(Router router, Expense expense) {
+
+    @Override
+    public void render() {
+        super.render();
+        loadStaffComboBox();
+    }
+
+    public NavigatePanel getContentPanel() {
+        return formContent();
+    }
+
+
+        /**
+         * Creates a new ExpenseFormPanel for editing an existing expense.
+         *
+         * @param expense The expense to edit
+         */
+    public ExpenseFormPanel(Expense expense) {
         this.expenseController = new ExpenseController();
         this.staffController = new StaffController();
-        this.router = router;
         this.isEditMode = true;
         this.expenseId = expense.getId();
         String selectedImagePath = expense.getPicture();
-        
-        initComponents();
+
         loadStaffComboBox();
-        
+
         // Populate form with expense data
         txtName.setText(expense.getName());
         txtDescription.setText(expense.getDescription());
         txtAmount.setText(String.format("%.2f", expense.getAmount()));
-        
+
         // Set the selected staff
         for (int i = 0; i < cmbStaff.getItemCount(); i++) {
             StaffComboItem item = cmbStaff.getItemAt(i);
@@ -80,100 +88,101 @@ public class ExpenseFormPanel extends NavigatePanel {
                 break;
             }
         }
-        
+
         // Display the image if available
         if (selectedImagePath != null && !selectedImagePath.isEmpty()) {
             displayImage(selectedImagePath);
         }
     }
-    
+
     /**
      * Initialize the components.
      */
-    private void initComponents() {
-        setLayout(new BorderLayout(0, 0));
-        setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        setBackground(Color.WHITE);
-        
+    private NavigatePanel formContent() {
+        NavigatePanel formContent = new NavigatePanel();
+        formContent.setLayout(new BorderLayout(0, 0));
+        formContent.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        formContent.setBackground(Color.WHITE);
+
         // Create header panel
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(Color.WHITE);
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(
-                UIConstants.CONTENT_PADDING, 
-                UIConstants.CONTENT_PADDING, 
-                UIConstants.CONTENT_PADDING, 
-                UIConstants.CONTENT_PADDING
-            )
+                BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING
+                )
         ));
-        
+
         // Title and back button
         JLabel titleLabel = new JLabel(isEditMode ? "Edit Expense" : "Add New Expense");
         titleLabel.setFont(UIConstants.TITLE_FONT);
         titleLabel.setForeground(UIConstants.TEXT_COLOR);
-        
+
         JButton backButton = new JButton("Back");
         backButton.setFont(UIConstants.BUTTON_FONT);
         backButton.setForeground(Color.WHITE);
         backButton.setBackground(UIConstants.PRIMARY_COLOR);
         backButton.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H, 
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H,
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H
         ));
         backButton.setFocusPainted(false);
         backButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Add hover effect
         backButton.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 backButton.setBackground(UIConstants.ACCENT_COLOR);
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 backButton.setBackground(UIConstants.PRIMARY_COLOR);
             }
         });
-        
-        backButton.addActionListener(e -> router.navigate("/expenses"));
-        
+
+        backButton.addActionListener(e -> Router.navigate("dashboard/expenses"));
+
         headerPanel.add(titleLabel, BorderLayout.WEST);
         headerPanel.add(backButton, BorderLayout.EAST);
-        
+
         // Create form panel
         JPanel formPanel = new JPanel(new BorderLayout());
         formPanel.setBackground(Color.WHITE);
         formPanel.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.CONTENT_PADDING, 
-            UIConstants.CONTENT_PADDING, 
-            UIConstants.CONTENT_PADDING, 
-            UIConstants.CONTENT_PADDING
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING
         ));
-        
+
         // Form fields
         JPanel fieldsPanel = new JPanel(new GridBagLayout());
         fieldsPanel.setBackground(Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(5, 5, 5, 5);
-        
+
         // Name field
         addFormLabel(fieldsPanel, "Name:", 0);
         txtName = new JTextField(20);
         txtName.setFont(UIConstants.TABLE_CONTENT_FONT);
         txtName.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.weightx = 1.0;
         fieldsPanel.add(txtName, gbc);
-        
+
         // Description field
         addFormLabel(fieldsPanel, "Description:", 1);
         txtDescription = new JTextArea(4, 20);
@@ -182,25 +191,25 @@ public class ExpenseFormPanel extends NavigatePanel {
         txtDescription.setWrapStyleWord(true);
         JScrollPane descScrollPane = new JScrollPane(txtDescription);
         descScrollPane.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
         gbc.gridx = 1;
         gbc.gridy = 1;
         fieldsPanel.add(descScrollPane, gbc);
-        
+
         // Amount field
         addFormLabel(fieldsPanel, "Amount:", 2);
         txtAmount = new JTextField(20);
         txtAmount.setFont(UIConstants.TABLE_CONTENT_FONT);
         txtAmount.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(8, 10, 8, 10)
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
         gbc.gridx = 1;
         gbc.gridy = 2;
         fieldsPanel.add(txtAmount, gbc);
-        
+
         // Staff dropdown
         addFormLabel(fieldsPanel, "Staff:", 3);
         cmbStaff = new JComboBox<>();
@@ -208,12 +217,12 @@ public class ExpenseFormPanel extends NavigatePanel {
         gbc.gridx = 1;
         gbc.gridy = 3;
         fieldsPanel.add(cmbStaff, gbc);
-        
+
         // Image panel
         JPanel imagePanel = new JPanel(new BorderLayout(0, 10));
         imagePanel.setBackground(new Color(255, 255, 255));
         imagePanel.setBorder(BorderFactory.createTitledBorder("Image"));
-        
+
         lblImage = new JLabel();
         lblImage.setHorizontalAlignment(JLabel.CENTER);
         lblImage.setPreferredSize(new Dimension(200, 200));
@@ -221,90 +230,91 @@ public class ExpenseFormPanel extends NavigatePanel {
 
         JButton btnBrowse = new JButton("Browse");
         btnBrowse.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        
+
         imagePanel.add(lblImage, BorderLayout.CENTER);
         imagePanel.add(btnBrowse, BorderLayout.SOUTH);
-        
+
         formPanel.add(fieldsPanel, BorderLayout.CENTER);
         formPanel.add(imagePanel, BorderLayout.EAST);
-        
+
         // Buttons panel
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonsPanel.setBackground(Color.WHITE);
         buttonsPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
-        
+
         btnSave = new JButton(isEditMode ? "Update Expense" : "Save Expense");
         btnSave.setFont(UIConstants.BUTTON_FONT);
         btnSave.setForeground(Color.WHITE);
         btnSave.setBackground(UIConstants.PRIMARY_COLOR);
         btnSave.setBorder(BorderFactory.createEmptyBorder(
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H, 
-            UIConstants.BUTTON_PADDING_V, 
-            UIConstants.BUTTON_PADDING_H
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H,
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H
         ));
         btnSave.setFocusPainted(false);
         btnSave.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Add hover effect
         btnSave.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 btnSave.setBackground(UIConstants.ACCENT_COLOR);
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 btnSave.setBackground(UIConstants.PRIMARY_COLOR);
             }
         });
-        
+
         btnSave.addActionListener(e -> saveExpense());
-        
+
         btnCancel = new JButton("Cancel");
         btnCancel.setFont(UIConstants.BUTTON_FONT);
         btnCancel.setForeground(UIConstants.TEXT_COLOR);
         btnCancel.setBackground(Color.WHITE);
         btnCancel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
-            BorderFactory.createEmptyBorder(
-                UIConstants.BUTTON_PADDING_V - 1, 
-                UIConstants.BUTTON_PADDING_H - 1, 
-                UIConstants.BUTTON_PADDING_V - 1, 
-                UIConstants.BUTTON_PADDING_H - 1
-            )
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(
+                        UIConstants.BUTTON_PADDING_V - 1,
+                        UIConstants.BUTTON_PADDING_H - 1,
+                        UIConstants.BUTTON_PADDING_V - 1,
+                        UIConstants.BUTTON_PADDING_H - 1
+                )
         ));
         btnCancel.setFocusPainted(false);
         btnCancel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
+
         // Add hover effect
         btnCancel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
                 btnCancel.setBackground(new Color(245, 245, 245));
             }
-            
+
             @Override
             public void mouseExited(MouseEvent e) {
                 btnCancel.setBackground(Color.WHITE);
             }
         });
-        
-        btnCancel.addActionListener(e -> router.navigate("/expenses"));
-        
+
+        btnCancel.addActionListener(e -> Router.navigate("dashboard/expenses"));
+
         buttonsPanel.add(btnCancel);
         buttonsPanel.add(Box.createHorizontalStrut(10));
         buttonsPanel.add(btnSave);
-        
+
         formPanel.add(buttonsPanel, BorderLayout.SOUTH);
-        
-        add(headerPanel, BorderLayout.NORTH);
-        add(formPanel, BorderLayout.CENTER);
+
+        formContent.add(headerPanel, BorderLayout.NORTH);
+        formContent.add(formPanel, BorderLayout.CENTER);
+        return formContent;
     }
-    
+
     /**
      * Add a label to the form.
-     * 
+     *
      * @param panel The panel to add the label to
      * @param text The label text
      * @param row The row to add the label to
@@ -320,7 +330,7 @@ public class ExpenseFormPanel extends NavigatePanel {
         gbc.gridy = row;
         panel.add(label, gbc);
     }
-    
+
     /**
      * Load staff members into the staff combo box.
      */
@@ -337,7 +347,7 @@ public class ExpenseFormPanel extends NavigatePanel {
             }
         }
     }
-    
+
     /**
      * Save the expense data.
      */
@@ -347,19 +357,19 @@ public class ExpenseFormPanel extends NavigatePanel {
             String name = txtName.getText().trim();
             String description = txtDescription.getText().trim();
             String amountText = txtAmount.getText().trim();
-            
+
             if (name.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Name is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
                 txtName.requestFocus();
                 return;
             }
-            
+
             if (description.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Description is required.", "Validation Error", JOptionPane.ERROR_MESSAGE);
                 txtDescription.requestFocus();
                 return;
             }
-            
+
             double amount;
             try {
                 amount = Double.parseDouble(amountText);
@@ -367,55 +377,55 @@ public class ExpenseFormPanel extends NavigatePanel {
                     throw new NumberFormatException("Amount must be greater than zero.");
                 }
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Amount must be a valid positive number.", 
+                JOptionPane.showMessageDialog(this, "Amount must be a valid positive number.",
                         "Validation Error", JOptionPane.ERROR_MESSAGE);
                 txtAmount.requestFocus();
                 return;
             }
-            
+
             if (cmbStaff.getSelectedItem() == null) {
-                JOptionPane.showMessageDialog(this, "Please select a staff member.", 
+                JOptionPane.showMessageDialog(this, "Please select a staff member.",
                         "Validation Error", JOptionPane.ERROR_MESSAGE);
                 cmbStaff.requestFocus();
                 return;
             }
-            
+
             StaffComboItem selectedStaff = (StaffComboItem) cmbStaff.getSelectedItem();
             int staffId = selectedStaff.getId();
-            
+
             if (isEditMode) {
                 // Update existing expense
                 boolean updated = expenseController.updateExpense(expenseId, name, description, amount, staffId);
                 if (updated) {
-                    JOptionPane.showMessageDialog(this, "Expense updated successfully.", 
+                    JOptionPane.showMessageDialog(this, "Expense updated successfully.",
                             "Success", JOptionPane.INFORMATION_MESSAGE);
-                    router.navigate("/expenses");
+                    Router.navigate("dashboard/expenses");
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to update expense.", 
+                    JOptionPane.showMessageDialog(this, "Failed to update expense.",
                             "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } else {
                 // Add new expense
                 boolean added = expenseController.addExpense(name, description, amount, staffId);
                 if (added) {
-                    JOptionPane.showMessageDialog(this, "Expense added successfully.", 
+                    JOptionPane.showMessageDialog(this, "Expense added successfully.",
                             "Success", JOptionPane.INFORMATION_MESSAGE);
-                    router.navigate("/expenses");
+                    Router.navigate("dashboard/expenses");
                 } else {
-                    JOptionPane.showMessageDialog(this, "Failed to add expense.", 
+                    JOptionPane.showMessageDialog(this, "Failed to add expense.",
                             "Error", JOptionPane.ERROR_MESSAGE);
                 }
             }
         } catch (Exception ex) {
             Logger.getLogger(ExpenseFormPanel.class.getName()).log(Level.SEVERE, "Error saving expense", ex);
-            JOptionPane.showMessageDialog(this, "Error saving expense: " + ex.getMessage(), 
+            JOptionPane.showMessageDialog(this, "Error saving expense: " + ex.getMessage(),
                     "Database Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-    
+
     /**
      * Display an image in the image label.
-     * 
+     *
      * @param imagePath The path to the image
      */
     private void displayImage(String imagePath) {
@@ -429,26 +439,26 @@ public class ExpenseFormPanel extends NavigatePanel {
             lblImage.setText("Error loading image");
         }
     }
-    
+
     /**
      * Inner class for staff combo box items.
      */
     private static class StaffComboItem {
         private final int id;
         private final String name;
-        
+
         public StaffComboItem(int id, String name) {
             this.id = id;
             this.name = name;
         }
-        
+
         public int getId() {
             return id;
         }
-        
+
         @Override
         public String toString() {
             return name;
         }
     }
-} 
+}

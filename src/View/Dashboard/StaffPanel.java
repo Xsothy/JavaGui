@@ -6,8 +6,8 @@ import Support.Router;
 import Support.SessionManager;
 import Support.UIConstants;
 import View.DashboardPanel;
+import View.Layout.DashboardLayout;
 import View.NavigatePanel;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.util.List;
@@ -18,7 +18,7 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Panel for viewing and managing staff members.
  */
-public class StaffPanel extends DashboardPanel {
+public class StaffPanel extends DashboardLayout {
     private final StaffController staffController;
     private JTable staffTable;
     private JTextField searchField;
@@ -37,7 +37,7 @@ public class StaffPanel extends DashboardPanel {
         loadStaff();
     }
 
-
+    @Override
     public NavigatePanel getContentPanel() {
         NavigatePanel contentPanel = new NavigatePanel();
         contentPanel.setLayout(new BorderLayout(0, 0));
@@ -121,7 +121,6 @@ public class StaffPanel extends DashboardPanel {
             addButton.setEnabled(user.getRole().equals("admin"));
         }
 
-
         // Add hover effect
         addButton.addMouseListener(new MouseAdapter() {
             @Override
@@ -195,6 +194,169 @@ public class StaffPanel extends DashboardPanel {
             }
         });
         return contentPanel;
+    }
+
+    /**
+     * Create the staff management content panel.
+     * 
+     * @return The staff content panel
+     */
+    private JPanel createStaffContent() {
+        JPanel staffContent = new JPanel(new BorderLayout(0, 0));
+        staffContent.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        staffContent.setBackground(Color.WHITE);
+
+        // Create header panel with title and add button
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Color.WHITE);
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING,
+                        UIConstants.CONTENT_PADDING
+                )
+        ));
+
+        // Left side of header: Title and subtitle
+        JPanel titlePanel = new JPanel();
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+        titlePanel.setBackground(Color.WHITE);
+
+        JLabel titleLabel = new JLabel("Staff Management");
+        titleLabel.setFont(UIConstants.TITLE_FONT);
+        titleLabel.setForeground(UIConstants.TEXT_COLOR);
+        titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        JLabel subtitleLabel = new JLabel("Add, edit or delete staff records");
+        subtitleLabel.setFont(UIConstants.SUBTITLE_FONT);
+        subtitleLabel.setForeground(UIConstants.LIGHT_TEXT_COLOR);
+        subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        titlePanel.add(titleLabel);
+        titlePanel.add(Box.createRigidArea(new Dimension(0, 5)));
+        titlePanel.add(subtitleLabel);
+
+        // Right side of header: Search and Add button
+        JPanel actionsPanel = new JPanel();
+        actionsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionsPanel.setBackground(Color.WHITE);
+
+        // Search field with icon
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(new BorderLayout());
+        searchPanel.setBackground(Color.WHITE);
+        searchPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIConstants.BORDER_COLOR),
+                BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        JLabel searchIcon = new JLabel("");
+        searchIcon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        searchIcon.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
+
+        searchField = new JTextField(15);
+        searchField.setBorder(null);
+        searchField.setFont(UIConstants.TABLE_CONTENT_FONT);
+
+        searchPanel.add(searchIcon, BorderLayout.WEST);
+        searchPanel.add(searchField, BorderLayout.CENTER);
+
+        // Add button
+        JButton addButton = new JButton("+ Add Staff");
+        addButton.setFont(UIConstants.BUTTON_FONT);
+        addButton.setForeground(Color.WHITE);
+        addButton.setBackground(UIConstants.PRIMARY_COLOR);
+        addButton.setBorder(BorderFactory.createEmptyBorder(
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H,
+                UIConstants.BUTTON_PADDING_V,
+                UIConstants.BUTTON_PADDING_H
+        ));
+        addButton.setFocusPainted(false);
+        addButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        // TODO:: Implement Policy
+        Staff user = SessionManager.getCurrentUser();
+        if (user != null) {
+            addButton.setEnabled(user.getRole().equals("admin"));
+        }
+
+        // Add hover effect
+        addButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                addButton.setBackground(UIConstants.ACCENT_COLOR);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                addButton.setBackground(UIConstants.PRIMARY_COLOR);
+            }
+        });
+
+        addButton.addActionListener(e -> Router.navigate("dashboard/staffs/add"));
+
+        actionsPanel.add(searchPanel);
+        actionsPanel.add(addButton);
+
+        headerPanel.add(titlePanel, BorderLayout.WEST);
+        headerPanel.add(actionsPanel, BorderLayout.EAST);
+
+        staffContent.add(headerPanel, BorderLayout.NORTH);
+
+        // Content panel with table
+        JPanel tablePanel = new JPanel(new BorderLayout());
+        tablePanel.setBackground(Color.WHITE);
+        tablePanel.setBorder(BorderFactory.createEmptyBorder(
+                UIConstants.SECTION_SPACING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING,
+                UIConstants.CONTENT_PADDING
+        ));
+
+        // Create the staff table
+        staffTable = new JTable();
+        staffTable.setRowHeight(UIConstants.TABLE_ROW_HEIGHT);
+        staffTable.setShowGrid(true);
+        staffTable.setGridColor(UIConstants.BORDER_COLOR);
+        staffTable.setSelectionBackground(new Color(235, 245, 255));
+        staffTable.setSelectionForeground(UIConstants.TEXT_COLOR);
+        staffTable.setFont(UIConstants.TABLE_CONTENT_FONT);
+        staffTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+        staffTable.setFillsViewportHeight(true);
+
+        // Style the header
+        staffTable.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
+        staffTable.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
+        staffTable.getTableHeader().setForeground(Color.WHITE);
+        staffTable.getTableHeader().setPreferredSize(
+                new Dimension(staffTable.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
+        );
+
+        JScrollPane scrollPane = new JScrollPane(staffTable);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.getViewport().setBackground(Color.WHITE);
+
+        tablePanel.add(scrollPane, BorderLayout.CENTER);
+
+        staffContent.add(tablePanel, BorderLayout.CENTER);
+
+        // Add search listener
+        searchField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                String searchText = searchField.getText().trim();
+                if (searchText.isEmpty()) {
+                    loadStaff();
+                } else {
+                    searchStaff(searchText);
+                }
+            }
+        });
+        
+        return staffContent;
     }
 
     /**

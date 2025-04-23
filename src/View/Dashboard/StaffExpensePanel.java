@@ -3,6 +3,7 @@ package View.Dashboard;
 import Controller.StaffController;
 import Model.Staff;
 import Model.StaffWithExpenses;
+import View.Layout.DashboardLayout;
 import View.NavigatePanel;
 
 import javax.swing.*;
@@ -12,7 +13,7 @@ import java.awt.*;
 /**
  * A panel for displaying a staff member with their expenses.
  */
-public class StaffExpensePanel extends NavigatePanel {
+public class StaffExpensePanel extends DashboardLayout {
     private final StaffController staffController;
     private final StaffWithExpenses staffWithExpenses;
     private final JTable expenseTable;

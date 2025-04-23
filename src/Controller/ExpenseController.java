@@ -1,15 +1,14 @@
 package Controller;
 
-import View.ExpenseFormPanel;
-import View.ExpensePanel;
-import View.NavigatePanel;
 import Model.Expense;
 import Model.ExpenseWithStaff;
 import Model.Staff;
 import Repository.ExpenseRepository;
 import Repository.StaffRepository;
 import Support.FileUtils;
-import Support.Router;
+import View.Dashboard.ExpenseFormPanel;
+import View.Dashboard.ExpensePanel;
+import View.NavigatePanel;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -42,7 +41,7 @@ public class ExpenseController {
         }
     }
 
-    public NavigatePanel edit(Map<String, String> params, Router router) {
+    public NavigatePanel edit(Map<String, String> params) {
         // Extract the ID parameter
         int expenseId = Integer.parseInt(params.get("id"));
 
@@ -54,7 +53,7 @@ public class ExpenseController {
                 return new NavigatePanel(); // Return empty panel or navigate back
             }
 
-            return new ExpenseFormPanel(router, expenseOpt.get());
+            return new ExpenseFormPanel(expenseOpt.get());
         } catch (IllegalArgumentException ex) {
             Logger.getLogger(ExpensePanel.class.getName()).log(Level.SEVERE, "Error opening expense edit form", ex);
             JOptionPane.showMessageDialog(null, "Error opening expense edit form: " + ex.getMessage(),
