@@ -77,7 +77,7 @@ public class SaleRepository {
                     "SELECT s.ID, s.Date, s.Total, s.SID, st.Name, st.Position, st.UserName, st.Password, st.Role " +
                     "FROM sales s " +
                     "LEFT JOIN staff st ON s.SID = st.ID " +
-                    "ORDER BY s.Date DESC"
+                    "ORDER BY s.ID DESC"
                 );
                 
                 while (rs.next()) {
@@ -200,37 +200,6 @@ public class SaleRepository {
                 }
                 
                 return Optional.of(new SaleWithStaff(sale, staff));
-            }
-        );
-    }
-    
-    /**
-     * Get all details for a sale.
-     * 
-     * @param saleId The sale ID
-     * @return List of sale details
-     */
-    public List<SaleDetail> getSaleDetails(int saleId) {
-        return DB.unsafeExecute(
-            connection -> {
-                List<SaleDetail> details = new ArrayList<>();
-                PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT ID, PID, Qty FROM sale_details WHERE ID = ?"
-                );
-                stmt.setInt(1, saleId);
-                ResultSet rs = stmt.executeQuery();
-                
-                while (rs.next()) {
-                    details.add(
-                        new SaleDetail(
-                            rs.getInt("ID"),
-                            rs.getInt("PID"),
-                            rs.getInt("Qty")
-                        )
-                    );
-                }
-                
-                return details;
             }
         );
     }
@@ -368,12 +337,12 @@ public class SaleRepository {
     
     /**
      * Delete a sale and its details.
-     * 
+     *
      * @param saleId The sale ID
      * @return True if the sale was deleted, false otherwise
      */
-    public boolean deleteSale(int saleId) {
-        return DB.unsafeExecute(
+    public void deleteSale(int saleId) {
+        DB.unsafeExecute(
             connection -> {
                 // Get the sale details to restore product quantities
                 PreparedStatement getDetailsStmt = connection.prepareStatement(
@@ -381,28 +350,28 @@ public class SaleRepository {
                 );
                 getDetailsStmt.setInt(1, saleId);
                 ResultSet rs = getDetailsStmt.executeQuery();
-                
+
                 // Restore product quantities
                 PreparedStatement restoreStockStmt = connection.prepareStatement(
                     "UPDATE product SET Sqty = Sqty + ? WHERE PID = ?"
                 );
-                
+
                 while (rs.next()) {
                     int productId = rs.getInt("PID");
                     int quantity = rs.getInt("Qty");
-                    
+
                     restoreStockStmt.setInt(1, quantity);
                     restoreStockStmt.setInt(2, productId);
                     restoreStockStmt.executeUpdate();
                 }
-                
+
                 // Delete the sale (details will be deleted via CASCADE)
                 PreparedStatement stmt = connection.prepareStatement(
                     "DELETE FROM sales WHERE ID = ?"
                 );
                 stmt.setInt(1, saleId);
                 int affectedRows = stmt.executeUpdate();
-                
+
                 return affectedRows > 0;
             }
         );
@@ -464,61 +433,5 @@ public class SaleRepository {
             }
         );
     }
-    
-    /**
-     * Get sales filtered by date range.
-     * 
-     * @param startDate The start date
-     * @param endDate The end date
-     * @return List of sales with staff information in the date range
-     */
-    public List<SaleWithStaff> getSalesByDateRange(Date startDate, Date endDate) {
-        return DB.unsafeExecute(
-            connection -> {
-                List<SaleWithStaff> sales = new ArrayList<>();
-                PreparedStatement stmt = connection.prepareStatement(
-                    "SELECT s.ID, s.Date, s.Total, s.SID, st.Name, st.Position, st.UserName, st.Password, st.Role " +
-                    "FROM sales s " +
-                    "LEFT JOIN staff st ON s.SID = st.ID " +
-                    "WHERE s.Date BETWEEN ? AND ? " +
-                    "ORDER BY s.Date DESC"
-                );
-                
-                stmt.setString(1, dateFormat.format(startDate));
-                stmt.setString(2, dateFormat.format(endDate));
-                ResultSet rs = stmt.executeQuery();
-                
-                while (rs.next()) {
-                    Date date;
-                    try {
-                        date = dateFormat.parse(rs.getString("Date"));
-                    } catch (ParseException e) {
-                        date = new Date(); // Fallback to current date if parse fails
-                    }
-                    
-                    Sale sale = new Sale(
-                        rs.getInt("ID"),
-                        date,
-                        rs.getBigDecimal("Total"),
-                        rs.getInt("SID")
-                    );
-                    
-                    Staff staff = null;
-                    if (rs.getInt("SID") > 0) {
-                        staff = new Staff(
-                            rs.getString("Name"),
-                            rs.getString("Position"),
-                            rs.getString("UserName"),
-                            rs.getString("Password"),
-                            rs.getString("Role")
-                        );
-                    }
-                    
-                    sales.add(new SaleWithStaff(sale, staff));
-                }
-                
-                return sales;
-            }
-        );
-    }
+
 } 

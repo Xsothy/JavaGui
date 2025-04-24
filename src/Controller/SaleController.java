@@ -10,13 +10,6 @@ import View.NavigatePanel;
 import java.math.BigDecimal;
 import java.util.*;
 import javax.swing.JOptionPane;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Timestamp;
-import java.math.RoundingMode;
-import Support.DB;
 
 /**
  * Controller class for managing sales.
@@ -41,16 +34,6 @@ public class SaleController {
     public List<SaleWithStaff> getAllSalesWithStaff() {
         return saleRepository.getAllSalesWithStaff();
     }
-    
-    /**
-     * Get all sales.
-     * 
-     * @return List of all sales
-     */
-    public List<Sale> getAllSales() {
-        return saleRepository.getAllSales();
-    }
-    
     /**
      * Get a sale by ID.
      * 
@@ -64,20 +47,7 @@ public class SaleController {
         
         return saleRepository.getSaleById(saleId);
     }
-    
-    /**
-     * Get a sale with staff information by ID.
-     * 
-     * @param saleId The sale ID
-     * @return Optional containing the sale with staff information if found, empty otherwise
-     */
-    public Optional<SaleWithStaff> getSaleWithStaffById(int saleId) {
-        if (saleId <= 0) {
-            return Optional.empty();
-        }
-        
-        return saleRepository.getSaleWithStaffById(saleId);
-    }
+
     
     /**
      * Get a complete sale with all details by ID.
@@ -92,21 +62,7 @@ public class SaleController {
         
         return saleRepository.getSaleWithDetails(saleId);
     }
-    
-    /**
-     * Get all details for a sale.
-     * 
-     * @param saleId The sale ID
-     * @return List of sale details
-     */
-    public List<SaleDetail> getSaleDetails(int saleId) {
-        if (saleId <= 0) {
-            throw new IllegalArgumentException("Invalid sale ID");
-        }
-        
-        return saleRepository.getSaleDetails(saleId);
-    }
-    
+
     /**
      * Get all details for a sale with product information.
      * 
@@ -171,11 +127,10 @@ public class SaleController {
     
     /**
      * Delete a sale.
-     * 
+     *
      * @param saleId The ID of the sale to delete
-     * @return True if the deletion was successful, false otherwise
      */
-    public boolean deleteSale(int saleId) {
+    public void deleteSale(int saleId) {
         if (saleId <= 0) {
             throw new IllegalArgumentException("Invalid sale ID");
         }
@@ -184,8 +139,8 @@ public class SaleController {
         if (sale.isEmpty()) {
             throw new IllegalArgumentException("Sale not found");
         }
-        
-        return saleRepository.deleteSale(saleId);
+
+        saleRepository.deleteSale(saleId);
     }
     
     /**
@@ -201,25 +156,7 @@ public class SaleController {
         
         return saleRepository.searchSales(searchTerm.trim());
     }
-    
-    /**
-     * Filter sales by date range.
-     * 
-     * @param startDate The start date
-     * @param endDate The end date
-     * @return List of sales in the date range
-     */
-    public List<SaleWithStaff> getSalesByDateRange(Date startDate, Date endDate) {
-        if (startDate == null || endDate == null) {
-            return getAllSalesWithStaff();
-        }
-        
-        if (startDate.after(endDate)) {
-            throw new IllegalArgumentException("Start date must be before end date");
-        }
-        
-        return saleRepository.getSalesByDateRange(startDate, endDate);
-    }
+
     
     /**
      * Show sale details panel.
@@ -257,26 +194,22 @@ public class SaleController {
      */
     public BigDecimal getTotalSalesAmount(Date startDate, Date endDate) {
         BigDecimal total = BigDecimal.ZERO;
-        try {
-            Connection connection = DB.getInstance().getConnection();
-            String query = "SELECT SUM(total) AS total_amount FROM sales WHERE date BETWEEN ? AND ?";
-            
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setTimestamp(1, new Timestamp(startDate.getTime()));
-            statement.setTimestamp(2, new Timestamp(endDate.getTime()));
-            
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                double amount = resultSet.getDouble("total_amount");
-                total = BigDecimal.valueOf(amount).setScale(2, RoundingMode.HALF_UP);
-            }
-            
-            resultSet.close();
-            statement.close();
-        } catch (SQLException e) {
-            System.err.println("Error fetching total sales amount: " + e.getMessage());
-        }
-        return total;
+        return this.saleRepository.getAllSales()
+                .stream()
+                .filter(sale -> {
+                    if (startDate != null && endDate != null) {
+                        return sale.getDate().after(startDate) && sale.getDate().before(endDate);
+                    }
+                    if (startDate != null) {
+                        return sale.getDate().after(startDate);
+                    }
+                    if (endDate != null) {
+                        return sale.getDate().before(endDate);
+                    }
+
+                    return true;
+                })
+                .reduce(total, (acc, sale) -> acc.add(sale.getTotal()), BigDecimal::add);
     }
     
     /**
@@ -288,24 +221,22 @@ public class SaleController {
      */
     public int getTotalSalesCount(Date startDate, Date endDate) {
         int count = 0;
-        try {
-            Connection connection = DB.getInstance().getConnection();
-            String query = "SELECT COUNT(*) AS sale_count FROM sales WHERE date BETWEEN ? AND ?";
-            
-            PreparedStatement statement = connection.prepareStatement(query);
-            statement.setTimestamp(1, new Timestamp(startDate.getTime()));
-            statement.setTimestamp(2, new Timestamp(endDate.getTime()));
-            
-            ResultSet resultSet = statement.executeQuery();
-            if (resultSet.next()) {
-                count = resultSet.getInt("sale_count");
-            }
-            
-            resultSet.close();
-            statement.close();
-        } catch (SQLException e) {
-            System.err.println("Error fetching sales count: " + e.getMessage());
-        }
-        return count;
+
+        return this.saleRepository.getAllSales()
+                .stream()
+                .filter(sale -> {
+                    if (startDate != null && endDate != null) {
+                        return sale.getDate().after(startDate) && sale.getDate().before(endDate);
+                    }
+                    if (startDate != null) {
+                        return sale.getDate().after(startDate);
+                    }
+                    if (endDate != null) {
+                        return sale.getDate().before(endDate);
+                    }
+
+                    return true;
+                })
+                .reduce(count, (acc, sale) -> acc + 1, Integer::sum);
     }
 } 

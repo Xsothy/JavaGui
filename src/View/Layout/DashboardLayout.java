@@ -155,7 +155,6 @@ public class DashboardLayout extends NavigatePanel {
         } else if (Router.getCurrentRoute().startsWith("dashboard/sales")) {
             currentSelectedButton = btnSale;
         }
-
         updateButtonSelectionState(currentSelectedButton);
         revalidate();
         repaint();

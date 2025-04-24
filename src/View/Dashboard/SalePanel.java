@@ -347,13 +347,9 @@ public class SalePanel extends DashboardLayout {
         );
 
         if (confirm == JOptionPane.YES_OPTION) {
-            try {
-                saleController.deleteSale(saleId);
-                JOptionPane.showMessageDialog(null, "Sale deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
-                loadSales();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(null, "Error deleting sale: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            saleController.deleteSale(saleId);
+            JOptionPane.showMessageDialog(null, "Sale deleted successfully", "Success", JOptionPane.INFORMATION_MESSAGE);
+            loadSales();
         }
     }
 

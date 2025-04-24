@@ -60,8 +60,8 @@ public class Router {
     public static void navigate(String path) {
         if (staticRoutes.containsKey(path)) {
             NavigatePanel panel = staticRoutes.get(path);
-            getInstance().displayPanel(panel);
             currentRoute = path;
+            getInstance().displayPanel(panel);
             return;
         }
         
@@ -70,8 +70,8 @@ public class Router {
             if (route.matches(path)) {
                 Map<String, String> parameters = route.extractParameters(path);
                 NavigatePanel panel = route.execute(parameters);
-                getInstance().displayPanel(panel);
                 currentRoute = path;
+                getInstance().displayPanel(panel);
                 return;
             }
         }

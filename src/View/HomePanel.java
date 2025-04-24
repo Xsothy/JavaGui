@@ -19,7 +19,7 @@ public class HomePanel extends NavigatePanel {
     public void render() {
         this.removeAll();
         Button btnDashboard = createStyledButton("Dashboard",SessionManager.isLoggedIn() ? Color.green : Color.GRAY);
-        btnDashboard.addActionListener(e -> navigate("dashboard"));
+        btnDashboard.addActionListener(e -> navigate("dashboard/sales/dashboard"));
         btnDashboard.setEnabled(SessionManager.isLoggedIn());
 
         Button btnLogin = createStyledButton(

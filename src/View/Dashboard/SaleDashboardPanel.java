@@ -320,8 +320,8 @@ public class SaleDashboardPanel extends DashboardLayout {
      * Update the statistics based on the selected filter.
      */
     private void updateStatistics() {
-        Date startDate;
-        Date endDate;
+        Date startDate = null;
+        Date endDate = null;
         Calendar calendar = Calendar.getInstance();
 
         if (dailyRadioButton.isSelected()) {
@@ -357,14 +357,8 @@ public class SaleDashboardPanel extends DashboardLayout {
         } else {
             // Use custom date range
             startDate = fromDateChooser.getDate();
-            if (startDate == null) {
-                startDate = new Date();
-            }
             
             endDate = toDateChooser.getDate();
-            if (endDate == null) {
-                endDate = new Date();
-            }
             
             // Set start date to beginning of day
             calendar.setTime(startDate);

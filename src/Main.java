@@ -21,6 +21,8 @@ import View.DashboardPanel;
 import View.HomePanel;
 import View.LoginPanel;
 import View.NavigatePanel;
+
+import java.awt.*;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -37,7 +39,6 @@ public class Main {
 
         NavigatePanel contentPane = new NavigatePanel();
         application.setContentPane(contentPane);
-
 
 
         if (!initializeDatabase()) {
