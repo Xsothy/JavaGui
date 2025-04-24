@@ -220,8 +220,8 @@ public class SalePanel extends DashboardLayout {
 
         // Style the header
         saleTable.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
-        saleTable.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
-        saleTable.getTableHeader().setForeground(Color.WHITE);
+        saleTable.getTableHeader().setBackground(UIConstants.TABLE_HEADER_BG_COLOR);
+        saleTable.getTableHeader().setForeground(UIConstants.TABLE_HEADER_FG_COLOR);
         saleTable.getTableHeader().setPreferredSize(
                 new Dimension(saleTable.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
         );

@@ -182,8 +182,8 @@ public class ExpensePanel extends DashboardLayout {
 
         // Style the header
         expenseTable.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
-        expenseTable.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
-        expenseTable.getTableHeader().setForeground(Color.WHITE);
+        expenseTable.getTableHeader().setBackground(UIConstants.TABLE_HEADER_BG_COLOR);
+        expenseTable.getTableHeader().setForeground(UIConstants.TABLE_HEADER_FG_COLOR);
         expenseTable.getTableHeader().setPreferredSize(
                 new Dimension(expenseTable.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
         );

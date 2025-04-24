@@ -167,8 +167,8 @@ public class StaffPanel extends DashboardLayout {
 
         // Style the header
         staffTable.getTableHeader().setFont(UIConstants.TABLE_HEADER_FONT);
-        staffTable.getTableHeader().setBackground(UIConstants.PRIMARY_COLOR);
-        staffTable.getTableHeader().setForeground(Color.WHITE);
+        staffTable.getTableHeader().setBackground(UIConstants.TABLE_HEADER_BG_COLOR);
+        staffTable.getTableHeader().setForeground(UIConstants.TABLE_HEADER_FG_COLOR);
         staffTable.getTableHeader().setPreferredSize(
                 new Dimension(staffTable.getTableHeader().getPreferredSize().width, UIConstants.TABLE_HEADER_HEIGHT)
         );
@@ -198,7 +198,7 @@ public class StaffPanel extends DashboardLayout {
 
     /**
      * Create the staff management content panel.
-     * 
+     *
      * @return The staff content panel
      */
     private JPanel createStaffContent() {
@@ -355,7 +355,7 @@ public class StaffPanel extends DashboardLayout {
                 }
             }
         });
-        
+
         return staffContent;
     }
 
@@ -485,6 +485,7 @@ public class StaffPanel extends DashboardLayout {
             editButton.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
             editButton.setFocusPainted(false);
             editButton.setFont(UIConstants.SMALL_BUTTON_FONT);
+            editButton.setFont(UIConstants.SMALL_BUTTON_FONT);
 
             // Delete button
             deleteButton = new JButton("Delete");
@@ -504,7 +505,7 @@ public class StaffPanel extends DashboardLayout {
             deleteButton.setEnabled(!user.getRole().equals("admin"));
 
         }
-        
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             if (isSelected) {
@@ -534,21 +535,21 @@ public class StaffPanel extends DashboardLayout {
 
         public ButtonsEditor() {
             super(new JCheckBox());
-            
+
             panel = new JPanel();
             panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
             panel.setOpaque(true);
-            
+
             // Create simple buttons with minimal configuration to prevent buffer issues
             previewButton = createSimpleButton("View", UIConstants.INFO_COLOR);
             editButton = createSimpleButton("Edit", UIConstants.PRIMARY_COLOR);
             deleteButton = createSimpleButton("Delete", UIConstants.DANGER_COLOR);
-            
+
             // Add action listeners with minimal code
             previewButton.addActionListener(e -> handlePreviewAction());
             editButton.addActionListener(e -> handleEditAction());
             deleteButton.addActionListener(e -> handleDeleteAction());
-            
+
             panel.add(previewButton);
             panel.add(editButton);
             panel.add(deleteButton);
@@ -575,19 +576,19 @@ public class StaffPanel extends DashboardLayout {
         private void handlePreviewAction() {
             fireEditingStopped();
             if (staffId <= 0) {
-                JOptionPane.showMessageDialog(panel, 
-                    "Invalid staff ID. Cannot view staff details.", 
-                    "Error", 
+                JOptionPane.showMessageDialog(panel,
+                    "Invalid staff ID. Cannot view staff details.",
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             try {
                 Router.navigate("dashboard/staffs/" + staffId);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(panel,
-                    "Error navigating to staff details: " + ex.getMessage(), 
-                    "Navigation Error", 
+                    "Error navigating to staff details: " + ex.getMessage(),
+                    "Navigation Error",
                     JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -596,19 +597,19 @@ public class StaffPanel extends DashboardLayout {
         private void handleEditAction() {
             fireEditingStopped();
             if (staffId <= 0) {
-                JOptionPane.showMessageDialog(panel, 
-                    "Invalid staff ID. Cannot edit staff.", 
-                    "Error", 
+                JOptionPane.showMessageDialog(panel,
+                    "Invalid staff ID. Cannot edit staff.",
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
+
             try {
                 Router.navigate("dashboard/staffs/edit/" + staffId);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(panel,
-                    "Error navigating to staff edit: " + ex.getMessage(), 
-                    "Navigation Error", 
+                    "Error navigating to staff edit: " + ex.getMessage(),
+                    "Navigation Error",
                     JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -616,7 +617,7 @@ public class StaffPanel extends DashboardLayout {
         // Handle delete action
         private void handleDeleteAction() {
             fireEditingStopped();
-            
+
             int confirm = JOptionPane.showConfirmDialog(
                 panel,
                 "Are you sure you want to delete this staff member?",
@@ -624,7 +625,7 @@ public class StaffPanel extends DashboardLayout {
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
             );
-            
+
             if (confirm == JOptionPane.YES_OPTION) {
                 deleteStaff(staffId);
             }
@@ -640,19 +641,19 @@ public class StaffPanel extends DashboardLayout {
             staffId = (int) table.getValueAt(row, 0);
 
             panel.setBackground(table.getSelectionBackground());
-            
+
             // Center the panel vertically
             int height = table.getRowHeight(row);
             int buttonHeight = editButton.getPreferredSize().height;
             int padding = Math.max(0, (height - buttonHeight) / 2);
             panel.setBorder(BorderFactory.createEmptyBorder(padding, 0, padding, 0));
-            
+
             return panel;
         }
-        
+
         @Override
         public Object getCellEditorValue() {
             return "";
         }
     }
-} 
+}
