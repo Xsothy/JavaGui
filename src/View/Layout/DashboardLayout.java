@@ -141,6 +141,7 @@ public class DashboardLayout extends NavigatePanel {
     public void render() {
         // Content panel
         NavigatePanel contentPanel = getContentPanel();
+        contentPanel.setPreferredSize(new Dimension(1000, 1000));
         add(contentPanel, BorderLayout.CENTER);
         if (Router.getCurrentRoute().startsWith("dashboard/staffs")) {
             currentSelectedButton = btnStaff;

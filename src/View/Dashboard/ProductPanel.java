@@ -23,6 +23,8 @@ public class ProductPanel extends DashboardLayout {
     private JTable productTable;
     private JTextField searchField;
     private JComboBox<String> filterComboBox;
+    // Stock alert threshold
+    private static final int LOW_STOCK_THRESHOLD = 10;
     
     /**
      * Constructor for ProductPanel.
@@ -295,13 +297,15 @@ public class ProductPanel extends DashboardLayout {
         
         productTable.setModel(model);
         
-        // Set up renderers for each column
+        // Set up custom renderer for stock column that highlights low stock
+        productTable.getColumnModel().getColumn(3).setCellRenderer(new StockLevelRenderer());
+        
+        // Set up renderers for other columns
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         
         productTable.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
         productTable.getColumnModel().getColumn(2).setCellRenderer(centerRenderer);
-        productTable.getColumnModel().getColumn(3).setCellRenderer(centerRenderer);
         
         // Set column widths
         productTable.getColumnModel().getColumn(0).setPreferredWidth(50);
@@ -314,6 +318,42 @@ public class ProductPanel extends DashboardLayout {
         // Set up the buttons renderer and editor
         productTable.getColumnModel().getColumn(5).setCellRenderer(new ButtonsRenderer());
         productTable.getColumnModel().getColumn(5).setCellEditor(new ButtonsEditor());
+    }
+    
+    /**
+     * Custom renderer for the stock column that highlights low stock levels
+     */
+    private static class StockLevelRenderer extends DefaultTableCellRenderer {
+        public StockLevelRenderer() {
+            setHorizontalAlignment(JLabel.CENTER);
+        }
+        
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, 
+                boolean isSelected, boolean hasFocus, int row, int column) {
+            
+            Component c = super.getTableCellRendererComponent(
+                table, value, isSelected, hasFocus, row, column);
+            
+            if (value instanceof Integer) {
+                int stockLevel = (Integer) value;
+                
+                if (stockLevel <= 0) {
+                    setText("No Stock");
+                    c.setForeground(Color.RED);
+                    return c;
+                } else if (stockLevel < LOW_STOCK_THRESHOLD) {
+                    setText("Low Stock (" + stockLevel + ")");
+                    c.setForeground(new Color(255, 165, 0));
+                } else {
+                    c.setBackground(isSelected ? table.getSelectionBackground() : table.getBackground());
+                    c.setForeground(isSelected ? table.getSelectionForeground() : table.getForeground());
+                }
+                setToolTipText(null);
+            }
+            
+            return c;
+        }
     }
     
     /**
